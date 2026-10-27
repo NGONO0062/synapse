@@ -12,3 +12,17 @@
   border-radius: 50%;
   flex: none;
 }
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 1px 10px 1px 8px;
+  border: 1px solid;
+  border-radius: var(--sy-radius-pill);
+  background: var(--sy-surface);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+}

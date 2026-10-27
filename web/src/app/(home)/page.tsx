@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { Suspense } from "react";
+import { STATUS_COLORS } from "@/components/ui/StatusDot";
 import { Tag, TypeTag } from "@/components/ui/Tag";
 import { Logo } from "@/components/ui/Logo";
 import { apiGet, type Decision, type ProjectSummary } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { DECISION_LABELS, TASK_STATUSES, casquetteLabel, type TaskStatus } from "@/lib/domain";
+import { DECISION_LABELS, STATUS_LABELS, TASK_STATUSES, casquetteLabel } from "@/lib/domain";
 import { relativeTime } from "@/lib/format";
 import styles from "./page.module.css";
 
@@ -95,24 +96,9 @@ async function Home() {
   );
 }
 
-const STATUS_COLORS: Record<TaskStatus, string> = {
-  BACKLOG: "var(--sy-status-backlog)",
-  TODO: "var(--sy-status-todo)",
-  IN_PROGRESS: "var(--sy-status-in-progress)",
-  REVIEW: "var(--sy-status-review)",
-  DONE: "var(--sy-status-done)",
-};
-
 function ProjectCard({ project }: { project: ProjectSummary }) {
   const c = project.status_counts;
   const total = TASK_STATUSES.reduce((sum, s) => sum + c[s], 0);
-  const summary = [
-    c.REVIEW > 0 && `${c.REVIEW} en review`,
-    c.IN_PROGRESS > 0 && `${c.IN_PROGRESS} in progress`,
-    `${c.DONE} done`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
 
   return (
     <Link href={`/projets/${project.id}`} className={styles.project}>
@@ -123,7 +109,18 @@ function ProjectCard({ project }: { project: ProjectSummary }) {
           <span key={s} style={{ flex: `${c[s]} 1 0`, background: STATUS_COLORS[s] }} />
         ))}
       </span>
-      <span className={styles.meta}>{total === 0 ? "Aucune tâche" : summary}</span>
+      {total === 0 ? (
+        <span className={styles.meta}>Aucune tâche</span>
+      ) : (
+        <ul className={styles.legend} aria-label="Tâches par statut">
+          {TASK_STATUSES.filter((s) => c[s] > 0).map((s) => (
+            <li key={s}>
+              <span className={styles.dot} style={{ background: STATUS_COLORS[s] }} aria-hidden />
+              {c[s]} {STATUS_LABELS[s].toLowerCase()}
+            </li>
+          ))}
+        </ul>
+      )}
       {project.pending_decisions > 0 && (
         <span>
           <Tag tone="human">

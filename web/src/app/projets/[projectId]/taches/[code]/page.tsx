@@ -5,21 +5,14 @@ import { Composer } from "@/components/task/Composer";
 import { DecisionActions } from "@/components/task/DecisionActions";
 import { ProposalCard } from "@/components/task/ProposalCard";
 import { TaskChain } from "@/components/task/TaskChain";
-import { Tag, type TagTone } from "@/components/ui/Tag";
+import { StatusTag } from "@/components/ui/StatusDot";
+import { Tag } from "@/components/ui/Tag";
 import { apiFind, apiGet, type Task, type TaskEvent, type TaskMessage } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import type { SessionUser } from "@/lib/auth/session";
-import { STATUS_LABELS, casquetteLabel, modelLabel, type TaskStatus } from "@/lib/domain";
+import { casquetteLabel, modelLabel } from "@/lib/domain";
 import { dayAndTime, relativeTime } from "@/lib/format";
 import styles from "./page.module.css";
-
-const STATUS_TONES: Record<TaskStatus, TagTone> = {
-  BACKLOG: "neutral",
-  TODO: "neutral",
-  IN_PROGRESS: "ai",
-  REVIEW: "human",
-  DONE: "neutral",
-};
 
 // Écrans 4 et 5 · Fil d'une tâche : conversation avec les casquettes, propositions à valider.
 export default function TaskPage({ params }: PageProps<"/projets/[projectId]/taches/[code]">) {
@@ -48,7 +41,7 @@ async function TaskThread({ params }: { params: Promise<{ projectId: string; cod
         <h1>
           <code>{task.code}</code> · {task.title}
         </h1>
-        <Tag tone={STATUS_TONES[task.status]}>{STATUS_LABELS[task.status]}</Tag>
+        <StatusTag status={task.status} />
         {task.awaiting_human && <Tag tone="warn">En attente de ta réponse</Tag>}
       </header>
 

@@ -4,19 +4,12 @@ import { Suspense } from "react";
 import { AccountMenu, AccountMenuFallback } from "@/components/shell/AccountMenu";
 import { NavLink } from "@/components/shell/NavLink";
 import shell from "@/components/shell/shell.module.css";
+import { STATUS_COLORS } from "@/components/ui/StatusDot";
 import { TypeTag } from "@/components/ui/Tag";
 import { Logo } from "@/components/ui/Logo";
 import { apiFind, apiGet, type Project, type ProjectSummary, type Task } from "@/lib/api";
-import { STATUS_LABELS, TASK_STATUSES, type TaskStatus } from "@/lib/domain";
+import { STATUS_LABELS, TASK_STATUSES } from "@/lib/domain";
 import styles from "./layout.module.css";
-
-const STATUS_COLORS: Record<TaskStatus, string> = {
-  BACKLOG: "var(--sy-status-backlog)",
-  TODO: "var(--sy-status-todo)",
-  IN_PROGRESS: "var(--sy-status-in-progress)",
-  REVIEW: "var(--sy-status-review)",
-  DONE: "var(--sy-status-done)",
-};
 
 // Structure commune des écrans de projet (section 9) : barre latérale des tâches par statut.
 export default function ProjectLayout({ children, params }: LayoutProps<"/projets/[projectId]">) {
