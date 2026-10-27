@@ -25,6 +25,7 @@ Spécification complète : `docs/Synapse_dossier_developpement.pdf`. Maquettes :
 - Environnements : `STAGING` et `PREPROD` déployés automatiquement, `PROD` uniquement par une action humaine, avec retour arrière automatique pendant 30 min si un contrôle de santé échoue.
 - Projets : création de zéro ou import d'un dépôt existant (étude du code, mémoire reconstituée, écarts spec/code tranchés par le PO, reprise des TODO et issues en Backlog).
 - Mémoire du projet (versionnée dans le dépôt) : Exigences, Maquettes, Architecture, Scénarios, Tests E2E, Décisions.
+- Visibilité (décision provisoire du 27/10/2026, à confirmer) : un PO voit tous les projets de l'espace ; un testeur ne voit que les bugs qu'il a signalés ; l'administrateur n'a pas accès aux projets en v1.
 - Modèle Excel des scénarios, colonnes dans l'ordre : Module, Scénario, Préconditions, Étapes, Résultat attendu, Chrome, Firefox, iOS, Android. Statuts par plateforme : `Not started`, `Passed`, `Failed`.
 
 ## Règles chiffrées
@@ -41,7 +42,7 @@ Spécification complète : `docs/Synapse_dossier_developpement.pdf`. Maquettes :
 - Orchestration : LangGraph, état sauvegardé dans PostgreSQL ; un sous-graphe par casquette.
 - Exécution du code généré : conteneur isolé, un par tâche.
 - Accès aux modèles : passerelle unique type LiteLLM (Claude Opus, Claude Sonnet, GPT, Gemini, Mistral, modèle local plus tard).
-- Identité : Keycloak (OIDC), rôles PO / TESTEUR / ADMIN.
+- Identité : Keycloak (OIDC), rôles PO / TESTEUR / ADMIN. L'écran de connexion est servi par Keycloak (thème `infra/keycloak/themes/synapse`) : aucun mot de passe ne transite par Synapse. Le front est un BFF : code + PKCE, jetons gardés côté serveur dans une session chiffrée (cookies httpOnly), renouvelés par `web/src/proxy.ts`.
 - Git : GitLab d'abord, GitHub ensuite.
 - Hébergement : cloud privé, Kubernetes léger.
 
@@ -64,3 +65,4 @@ Spécification complète : `docs/Synapse_dossier_developpement.pdf`. Maquettes :
 - `web/` : front Next.js 16 (lire `web/AGENTS.md` : cette version diffère des habitudes, docs dans `web/node_modules/next/dist/docs/`). Les jetons sont copiés depuis `design/tokens.css` par `npm run tokens` (automatique avant `dev` et `build`) ; ne jamais éditer `web/src/styles/tokens.css`.
 - `api/` : FastAPI. Le cycle de vie des tâches est un module pur, `synapse_api/domain/lifecycle.py` : toute règle de transition s'y écrit, avec son test dans `tests/test_lifecycle.py`. Les agents n'appellent jamais l'API HTTP ; ils passent par `services.execute` avec un acteur `Actor.agent(...)`.
 - `infra/` : `docker-compose.yml` pour le développement local (Postgres+pgvector, Keycloak, MinIO, LiteLLM).
+- Session côté front : les composants serveur lisent l'utilisateur via `web/src/lib/auth/current-user.ts` (derrière un `<Suspense>`) et appellent l'API via `web/src/lib/api.ts`. Ne jamais exposer un jeton à un composant client.

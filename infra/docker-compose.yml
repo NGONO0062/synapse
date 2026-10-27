@@ -31,6 +31,10 @@ services:
     ports: ["8080:8080"]
     volumes:
       - ./keycloak/synapse-realm.json:/opt/keycloak/data/import/synapse-realm.json:ro
+      # Thème de connexion ; jetons et logo montés depuis leur source unique.
+      - ./keycloak/themes/synapse:/opt/keycloak/themes/synapse:ro
+      - ../design:/opt/keycloak/themes/synapse/login/resources/design:ro
+      - ../web/public:/opt/keycloak/themes/synapse/login/resources/brand:ro
     depends_on:
       postgres:
         condition: service_healthy

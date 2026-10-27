@@ -3,15 +3,26 @@
   "enabled": true,
   "displayName": "Synapse",
   "internationalizationEnabled": true,
-  "supportedLocales": ["fr"],
+  "supportedLocales": [
+    "fr"
+  ],
   "defaultLocale": "fr",
   "resetPasswordAllowed": true,
   "loginWithEmailAllowed": true,
   "roles": {
     "realm": [
-      { "name": "PO", "description": "Product Owner" },
-      { "name": "TESTEUR", "description": "Testeur" },
-      { "name": "ADMIN", "description": "Administrateur d'espace" }
+      {
+        "name": "PO",
+        "description": "Product Owner"
+      },
+      {
+        "name": "TESTEUR",
+        "description": "Testeur"
+      },
+      {
+        "name": "ADMIN",
+        "description": "Administrateur d'espace"
+      }
     ]
   },
   "clients": [
@@ -21,9 +32,16 @@
       "publicClient": true,
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
-      "redirectUris": ["http://localhost:3000/*"],
-      "webOrigins": ["http://localhost:3000"],
-      "attributes": { "pkce.code.challenge.method": "S256" },
+      "redirectUris": [
+        "http://localhost:3200/auth/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3200"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3200/connexion"
+      },
       "protocolMappers": [
         {
           "name": "audience-synapse-api",
@@ -35,7 +53,8 @@
             "id.token.claim": "false"
           }
         }
-      ]
+      ],
+      "frontchannelLogout": false
     },
     {
       "clientId": "synapse-api",
@@ -53,7 +72,9 @@
       "lastName": "Mbarga",
       "enabled": true,
       "emailVerified": true,
-      "realmRoles": ["PO"]
+      "realmRoles": [
+        "PO"
+      ]
     },
     {
       "username": "brice",
@@ -62,7 +83,10 @@
       "lastName": "Nkoulou",
       "enabled": true,
       "emailVerified": true,
-      "realmRoles": ["TESTEUR"]
+      "realmRoles": [
+        "TESTEUR"
+      ]
     }
-  ]
+  ],
+  "loginTheme": "synapse"
 }

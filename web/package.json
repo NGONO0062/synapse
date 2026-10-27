@@ -6,16 +6,19 @@
     "tokens": "node scripts/sync-tokens.mjs",
     "predev": "npm run tokens",
     "prebuild": "npm run tokens",
-    "dev": "next dev",
+    "dev": "next dev -p 3200",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 3200",
     "lint": "eslint",
     "typecheck": "npm run tokens && tsc --noEmit"
   },
   "dependencies": {
+    "jose": "^6.2.13",
     "next": "16.4.3",
+    "openid-client": "^6.8.8",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1"
   },
   "devDependencies": {
     "@types/node": "^20",

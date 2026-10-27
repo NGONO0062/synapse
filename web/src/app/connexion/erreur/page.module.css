@@ -1,0 +1,31 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 48px 16px;
+  text-align: center;
+}
+
+.page h1 {
+  font-size: 28px;
+}
+
+.page p {
+  color: var(--sy-text-muted);
+}
+
+.retry {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  margin-top: 8px;
+  padding: 0 24px;
+  border-radius: var(--sy-radius-pill);
+  background: var(--sy-text);
+  color: var(--sy-sidebar);
+  font-weight: 600;
+  text-decoration: none;
+}

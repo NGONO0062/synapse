@@ -1,5 +1,13 @@
 // Miroir du domaine défini côté API (api/synapse_api/domain/enums.py).
 
+export type Role = "PO" | "TESTEUR" | "ADMIN";
+
+export const ROLE_LABELS: Record<Role, string> = {
+  PO: "Product Owner",
+  TESTEUR: "Testeur",
+  ADMIN: "Administrateur",
+};
+
 export const TASK_STATUSES = ["BACKLOG", "TODO", "IN_PROGRESS", "REVIEW", "DONE"] as const;
 export type TaskStatus = (typeof TASK_STATUSES)[number];
 

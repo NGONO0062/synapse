@@ -1,0 +1,36 @@
+.card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--sy-surface);
+  border: 1px solid var(--sy-border);
+  border-radius: var(--sy-radius-card);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--sy-human-bg);
+  color: var(--sy-human-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-right: auto;
+  font-size: 13px;
+  color: var(--sy-text-muted);
+}
+
+.identity strong {
+  color: var(--sy-text);
+  font-size: 14px;
+}

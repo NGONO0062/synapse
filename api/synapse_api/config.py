@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     oidc_issuer: str = "http://localhost:8080/realms/synapse"
     oidc_audience: str = "synapse-api"
 
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:3200"]
 
     @property
     def oidc_jwks_url(self) -> str:

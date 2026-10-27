@@ -42,3 +42,4 @@ next-env.d.ts
 
 # jetons copiés depuis ../design (npm run tokens)
 /src/styles/tokens.css
+!.env.example

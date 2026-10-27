@@ -1,0 +1,224 @@
+/* Thème de connexion Synapse. Valeurs reprises de docs/maquettes-html/01-Login.html ;
+   couleurs uniquement via les jetons de design/tokens.css. */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--sy-bg);
+  color: var(--sy-text);
+  font-family: var(--sy-font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--sy-link);
+}
+
+:focus-visible {
+  outline: 2px solid var(--sy-ai);
+  outline-offset: 2px;
+}
+
+.sy-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 48px 16px;
+}
+
+.sy-column {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.sy-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.sy-header h1 {
+  margin: 0;
+  font-family: var(--sy-font-display);
+  font-size: 40px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.sy-tagline {
+  margin: 0;
+  color: var(--sy-text-muted);
+  font-size: 16px;
+}
+
+.sy-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px;
+  background: var(--sy-surface);
+  border: 1px solid var(--sy-border);
+  border-radius: var(--sy-radius-composer);
+}
+
+.sy-card-title {
+  margin: 0;
+  font-family: var(--sy-font-display);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.sy-card-title:empty {
+  display: none;
+}
+
+.sy-attempted {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.sy-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--sy-text-muted);
+  font-size: 13px;
+}
+
+.sy-divider span {
+  flex: 1;
+  height: 1px;
+  background: var(--sy-border);
+}
+
+.sy-form,
+.sy-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sy-field,
+.sy-card form > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sy-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.sy-label-row a {
+  font-size: 13px;
+}
+
+.sy-card label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sy-card input[type="text"],
+.sy-card input[type="email"],
+.sy-card input[type="password"] {
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--sy-border-strong);
+  border-radius: var(--sy-radius-field);
+  background: var(--sy-bg);
+  color: var(--sy-text);
+  font: inherit;
+}
+
+.sy-card input::placeholder {
+  color: var(--sy-placeholder);
+}
+
+.sy-card input:focus-visible {
+  outline: none;
+  border-color: var(--sy-ai);
+}
+
+.sy-card input[aria-invalid="true"] {
+  border-color: var(--sy-error-text);
+}
+
+.sy-btn,
+.sy-card input[type="submit"],
+.sy-card button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: var(--sy-radius-pill);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sy-btn-primary,
+.sy-card input[type="submit"],
+.sy-card button[type="submit"] {
+  width: 100%;
+  background: var(--sy-text);
+  color: var(--sy-sidebar);
+}
+
+.sy-btn-sso {
+  background: var(--sy-bg);
+  border-color: var(--sy-border-strong);
+  color: var(--sy-text);
+  font-weight: 500;
+}
+
+.sy-alert {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--sy-radius-field);
+  font-size: 14px;
+}
+
+.sy-alert-error {
+  background: var(--sy-error-bg);
+  color: var(--sy-error-text);
+}
+
+.sy-alert-warning {
+  background: var(--sy-warn-bg);
+  color: var(--sy-warn-text);
+}
+
+.sy-alert-success,
+.sy-alert-info {
+  background: var(--sy-neutral-bg);
+  color: var(--sy-neutral-text);
+}
+
+.sy-info,
+.sy-footer {
+  margin: 0;
+  color: var(--sy-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
