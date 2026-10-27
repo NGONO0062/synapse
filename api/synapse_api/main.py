@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from synapse_api.auth import User
 from synapse_api.config import get_settings
-from synapse_api.routes import projects, tasks
+from synapse_api.domain.enums import AI_MODELS, DEFAULT_AI_MODEL
+from synapse_api.routes import decisions, projects, tasks
 from synapse_api.schemas import MeOut
 
 
@@ -18,10 +19,15 @@ def create_app() -> FastAPI:
     )
     app.include_router(projects.router)
     app.include_router(tasks.router)
+    app.include_router(decisions.router)
 
     @app.get("/health", tags=["système"])
     def health() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/models", tags=["système"])
+    def models() -> dict[str, object]:
+        return {"models": list(AI_MODELS), "default": DEFAULT_AI_MODEL}
 
     @app.get("/me", response_model=MeOut, tags=["système"])
     def me(user: User) -> MeOut:

@@ -1,0 +1,111 @@
+.projectBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 12px 10px;
+  border-bottom: 1px solid var(--sy-border-soft);
+}
+
+.switcher {
+  position: relative;
+  min-width: 0;
+}
+
+.switcher summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--sy-touch);
+  padding: 0 6px;
+  border-radius: 8px;
+  font-family: var(--sy-font-display);
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.25;
+  cursor: pointer;
+  list-style: none;
+}
+
+.switcher summary::-webkit-details-marker {
+  display: none;
+}
+
+.switcher summary svg {
+  flex: none;
+}
+
+.switcherPanel {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  background: var(--sy-surface);
+  border: 1px solid var(--sy-border);
+  border-radius: var(--sy-radius-field);
+}
+
+.newTask {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--sy-touch);
+  height: var(--sy-touch);
+  margin-top: 0;
+  border: 1px solid var(--sy-border);
+  border-radius: 50%;
+  background: var(--sy-surface);
+  color: var(--sy-text);
+}
+
+.groups {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 12px 8px 20px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.task {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 2px;
+}
+
+.taskTitle {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.taskMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--sy-text-muted);
+}
+
+.taskMeta code {
+  font-size: 11px;
+}
+
+.awaiting {
+  color: var(--sy-warn-text);
+}

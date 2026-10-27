@@ -116,3 +116,71 @@ def test_lifecycle_errors_map_to_http(clients):
 
     # Aucun événement n'est journalisé pour une commande refusée.
     assert clients.as_(PO).get(f"/tasks/{task}/events").json() == []
+
+
+def test_project_summaries_count_statuses_and_decisions(clients, session_factory):
+    project = new_project(clients)
+    task = new_task(clients, project)["id"]
+    new_task(clients, project, "DOC")
+    command(clients, PO, task, "PRIORITIZE")
+    agent(session_factory, task, Command.PROPOSE_PLAN, Casquette.ARCHITECTE)
+
+    [summary] = clients.as_(PO).get("/projects").json()
+    assert summary["status_counts"]["TODO"] == 1 and summary["status_counts"]["BACKLOG"] == 1
+    assert summary["pending_decisions"] == 1
+
+
+def test_decisions_list_what_waits_for_each_role(clients, session_factory):
+    project = new_project(clients)
+    bug = new_task(clients, project, "BUGFIX", user=TESTEUR)["id"]
+    command(clients, PO, bug, "PRIORITIZE")
+    agent(session_factory, bug, Command.PROPOSE_PLAN, Casquette.DEBOGUEUR)
+
+    [decision] = clients.as_(PO).get("/decisions").json()
+    assert decision["kind"] == "PLAN" and decision["project_name"] == "Gestion des feuilles de temps"
+    assert clients.as_(TESTEUR).get("/decisions").json() == []
+
+    command(clients, PO, bug, "VALIDATE_PLAN")
+    agent(session_factory, bug, Command.SUBMIT_FOR_REVIEW)
+    command(clients, PO, bug, "VALIDATE_RESULT")
+    assert clients.as_(PO).get("/decisions").json() == []
+    [mine] = clients.as_(TESTEUR).get("/decisions").json()
+    assert mine["kind"] == "TESTER_CONFIRMATION"
+    assert clients.as_(AUTRE_TESTEUR).get("/decisions").json() == []
+
+
+def test_task_by_code_respects_visibility(clients):
+    project = new_project(clients)
+    bug = new_task(clients, project, "BUGFIX", user=TESTEUR)
+    assert clients.as_(PO).get(f"/projects/{project}/tasks/by-code/bug-001").json()["id"] == bug["id"]
+    assert clients.as_(AUTRE_TESTEUR).get(f"/projects/{project}/tasks/by-code/BUG-001").status_code == 404
+    assert clients.as_(PO).get(f"/projects/{project}/tasks/by-code/XYZ-1").status_code == 404
+
+
+def test_request_opens_the_thread_and_messages_follow(clients):
+    project = new_project(clients)
+    res = clients.as_(PO).post(
+        f"/projects/{project}/tasks",
+        json={
+            "type": "FEATURE",
+            "title": "Export PDF",
+            "description": "Seulement les feuilles validées.",
+            "ai_model": "claude-opus",
+        },
+    )
+    task = res.json()
+    assert task["ai_model"] == "claude-opus"
+    clients.as_(PO).post(f"/tasks/{task['id']}/messages", json={"body": "Précision : format A4."})
+    thread = clients.as_(PO).get(f"/tasks/{task['id']}/messages").json()
+    assert [(m["author_name"], m["body"]) for m in thread] == [
+        ("Aline Mbarga", "Seulement les feuilles validées."),
+        ("Aline Mbarga", "Précision : format A4."),
+    ]
+
+
+def test_unknown_ai_model_is_rejected(clients):
+    project = new_project(clients)
+    res = clients.as_(PO).post(
+        f"/projects/{project}/tasks", json={"type": "DOC", "title": "x", "ai_model": "gpt-99"}
+    )
+    assert res.status_code == 422

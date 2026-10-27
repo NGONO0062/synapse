@@ -28,6 +28,21 @@ Keycloak (http://localhost:8080) importe le royaume `synapse` : rôles `PO`, `TE
 
 Ouvrir http://localhost:3200 : sans session, on arrive sur la connexion Keycloak, puis sur l'accueil.
 
+## Simuler les agents (en attendant l'orchestrateur)
+
+Les casquettes arrivent au lot 3. D'ici là, un simulateur joue leur rôle sur une tâche, en passant par les mêmes règles du cycle de vie. Ses messages sont marqués « [Simulation] ».
+
+```bash
+cd api
+.venv/Scripts/python -m synapse_api.dev.simulate FEAT-001 plan        # propose un plan (tâche en To do)
+.venv/Scripts/python -m synapse_api.dev.simulate FEAT-001 question    # pose une question (In progress)
+.venv/Scripts/python -m synapse_api.dev.simulate FEAT-001 qa-failure  # échec QA (3 échecs : remontée au PO)
+.venv/Scripts/python -m synapse_api.dev.simulate FEAT-001 result      # livre le résultat (passe en Review)
+# --project "Nom du projet" si le code existe dans plusieurs projets
+```
+
+Parcours type : créer une demande → Prioriser → `plan` → Valider le plan → `result` → Valider le résultat.
+
 ## Vérifier
 
 ```bash
@@ -41,5 +56,6 @@ cd web && npm run typecheck && npm run lint && npm run build
 | --- | --- | --- |
 | 0 · Fondations | Monorepo, cycle de vie des tâches, API projets/tâches/journal, auth OIDC, migration initiale, design system, écran de connexion | Fait |
 | 1 · Identité | Thème de connexion Keycloak, connexion OIDC (BFF, PKCE), session chiffrée, renouvellement des jetons, garde des routes, déconnexion, accueil appelant l'API | Fait |
-| 2 · Projets et tâches | Accueil, nouveau projet, barre latérale par statut, fil de tâche | À faire |
+| 2a · Projets et tâches | Accueil (décisions en attente, projets), nouveau projet, barre latérale par statut, fil de tâche (plans, résultats, questions, décisions), barre de saisie, simulateur d'agent | Fait |
+| 2b · Bugfix et testeur | Panneau droit du fil Bugfix (diff, tests), écran du testeur (signaler un bug) | À faire |
 | 3 · Orchestration | LangGraph, sous-graphes par casquette, passerelle LiteLLM, bac à sable | À faire |

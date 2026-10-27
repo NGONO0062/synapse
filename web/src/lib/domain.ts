@@ -66,3 +66,32 @@ export const CASQUETTES: Record<Casquette, { label: string; initials: string }> 
 export function taskCode(type: TaskType, number: number): string {
   return `${TYPE_PREFIXES[type]}-${String(number).padStart(3, "0")}`;
 }
+
+export type PendingDecision = "PLAN" | "QUESTION" | "ESCALATION" | "RESULT" | "TESTER_CONFIRMATION";
+
+export const DECISION_LABELS: Record<PendingDecision, string> = {
+  PLAN: "Plan",
+  QUESTION: "Question",
+  ESCALATION: "À trancher",
+  RESULT: "Résultat",
+  TESTER_CONFIRMATION: "À confirmer",
+};
+
+// Modèles exposés par la passerelle (api : domain/enums.py AI_MODELS).
+export const AI_MODELS = [
+  { id: "claude-sonnet", label: "Claude Sonnet" },
+  { id: "claude-opus", label: "Claude Opus" },
+  { id: "gpt", label: "GPT" },
+  { id: "gemini", label: "Gemini" },
+  { id: "mistral", label: "Mistral" },
+] as const;
+
+export const DEFAULT_AI_MODEL = "claude-sonnet";
+
+export function modelLabel(id: string): string {
+  return AI_MODELS.find((m) => m.id === id)?.label ?? id;
+}
+
+export function casquetteLabel(casquette: string | null | undefined): string {
+  return casquette && casquette in CASQUETTES ? CASQUETTES[casquette as Casquette].label : "Agent";
+}

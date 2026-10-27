@@ -8,8 +8,10 @@ from synapse_api.domain.lifecycle import (
     AwaitingReason,
     Command,
     LifecycleError,
+    PendingDecision,
     TaskState,
     apply,
+    pending_decision,
 )
 from synapse_api.domain.rules import MAX_QA_ROUND_TRIPS, MAX_TASK_EXECUTION
 
@@ -163,3 +165,32 @@ class TestAwaitingHuman:
 
     def test_only_orchestrator_moves_to_review(self):
         expect_error("forbidden", in_progress(), Command.SUBMIT_FOR_REVIEW, ARCHI)
+
+
+class TestPendingDecision:
+    def test_backlog_and_running_tasks_wait_for_nobody(self):
+        assert pending_decision(TaskState(TaskType.FEATURE)) is None
+        assert pending_decision(in_progress()) is None
+
+    def test_proposed_plan_waits_for_po(self):
+        state = run(TaskState(TaskType.FEATURE), (Command.PRIORITIZE, PO))
+        assert pending_decision(state) is None
+        state = run(state, (Command.PROPOSE_PLAN, ARCHI))
+        assert pending_decision(state) is PendingDecision.PLAN
+        state = run(state, (Command.REQUEST_PLAN_CHANGES, PO))
+        assert pending_decision(state) is None
+
+    def test_awaiting_reasons(self):
+        assert pending_decision(run(in_progress(), (Command.ASK_HUMAN, ARCHI))) is PendingDecision.QUESTION
+        assert pending_decision(run(in_progress(), (Command.PROPOSE_PLAN, ARCHI))) is PendingDecision.PLAN
+        state = in_progress()
+        for _ in range(MAX_QA_ROUND_TRIPS):
+            state = run(state, (Command.RECORD_QA_FAILURE, ORCH))
+        assert pending_decision(state) is PendingDecision.ESCALATION
+
+    def test_review_waits_for_po_then_tester(self):
+        state = in_review(TaskType.BUGFIX)
+        assert pending_decision(state) is PendingDecision.RESULT
+        state = run(state, (Command.VALIDATE_RESULT, PO))
+        assert pending_decision(state) is PendingDecision.TESTER_CONFIRMATION
+        assert pending_decision(run(state, (Command.CONFIRM_FIX, TESTEUR))) is None

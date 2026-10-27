@@ -4,8 +4,8 @@ import styles from "./Tag.module.css";
 
 export type TagTone = "ai" | "human" | "error" | "warn" | "neutral";
 
-export function Tag({ tone, children }: { tone: TagTone; children: ReactNode }) {
-  return <span className={`${styles.tag} ${styles[tone]}`}>{children}</span>;
+export function Tag({ tone, small = false, children }: { tone: TagTone; small?: boolean; children: ReactNode }) {
+  return <span className={[styles.tag, styles[tone], small && styles.small].filter(Boolean).join(" ")}>{children}</span>;
 }
 
 const TYPE_TONES: Record<TaskType, TagTone> = {
@@ -14,6 +14,10 @@ const TYPE_TONES: Record<TaskType, TagTone> = {
   DOC: "neutral",
 };
 
-export function TypeTag({ type }: { type: TaskType }) {
-  return <Tag tone={TYPE_TONES[type]}>{TYPE_LABELS[type]}</Tag>;
+export function TypeTag({ type, small = false }: { type: TaskType; small?: boolean }) {
+  return (
+    <Tag tone={TYPE_TONES[type]} small={small}>
+      {TYPE_LABELS[type]}
+    </Tag>
+  );
 }

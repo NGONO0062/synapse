@@ -2,6 +2,7 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     Enum,
@@ -15,8 +16,15 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from synapse_api.domain.enums import TaskStatus, TaskType
-from synapse_api.domain.lifecycle import ActorKind, AwaitingReason, Command
+from synapse_api.domain.enums import DEFAULT_AI_MODEL, MessageKind, TaskStatus, TaskType
+from synapse_api.domain.lifecycle import (
+    ActorKind,
+    AwaitingReason,
+    Command,
+    PendingDecision,
+    TaskState,
+    pending_decision,
+)
 
 
 def utcnow() -> datetime:
@@ -71,6 +79,8 @@ class Task(Base):
     title: Mapped[str] = mapped_column(String(300))
     description: Mapped[str] = mapped_column(Text, default="")
     created_by: Mapped[str] = mapped_column(String(255), index=True)
+    # Modèle IA choisi dans la barre de saisie ; la casquette, elle, est choisie par l'orchestrateur.
+    ai_model: Mapped[str] = mapped_column(String(100), default=DEFAULT_AI_MODEL)
 
     # État du cycle de vie, miroir de domain.lifecycle.TaskState.
     status: Mapped[TaskStatus] = mapped_column(
@@ -95,12 +105,37 @@ class Task(Base):
 
     project: Mapped[Project] = relationship(back_populates="tasks")
     events: Mapped[list["TaskEvent"]] = relationship(back_populates="task", order_by="TaskEvent.created_at")
+    messages: Mapped[list["TaskMessage"]] = relationship(
+        back_populates="task", order_by="TaskMessage.created_at"
+    )
 
     __mapper_args__ = {"version_id_col": row_version}
 
     @property
     def code(self) -> str:
         return f"{self.type.prefix}-{self.number:03d}"
+
+    def lifecycle_state(self) -> TaskState:
+        started = self.execution_started_at
+        if started is not None and started.tzinfo is None:
+            started = started.replace(tzinfo=UTC)  # SQLite perd le fuseau
+        return TaskState(
+            type=self.type,
+            status=self.status,
+            plan_version=self.plan_version,
+            validated_plan_version=self.validated_plan_version,
+            rejected_plan_version=self.rejected_plan_version,
+            awaiting_human=self.awaiting_human,
+            awaiting_reason=self.awaiting_reason,
+            qa_round_trips=self.qa_round_trips,
+            execution_started_at=started,
+            result_validated=self.result_validated,
+            tester_confirmed=self.tester_confirmed,
+        )
+
+    @property
+    def pending_decision(self) -> PendingDecision | None:
+        return pending_decision(self.lifecycle_state())
 
 
 class TaskEvent(Base):
@@ -123,3 +158,25 @@ class TaskEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     task: Mapped[Task] = relationship(back_populates="events")
+
+
+class TaskMessage(Base):
+    """Fil de la tâche : messages humains, réponses et propositions des casquettes."""
+
+    __tablename__ = "task_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    task_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tasks.id"), index=True)
+    kind: Mapped[MessageKind] = mapped_column(_enum(MessageKind, "ck_task_messages_kind"))
+    author_kind: Mapped[ActorKind] = mapped_column(_enum(ActorKind, "ck_task_messages_author_kind"))
+    author_name: Mapped[str] = mapped_column(String(255))
+    author_subject: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    casquette: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    ai_model: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    body: Mapped[str] = mapped_column(Text, default="")
+    # Contenu structuré d'une proposition (plan ou résultat), voir schemas.ProposalPayload.
+    payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    plan_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    task: Mapped[Task] = relationship(back_populates="messages")

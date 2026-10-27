@@ -44,6 +44,18 @@ class Casquette(StrEnum):
     DEVOPS = "DEVOPS"
 
 
+class MessageKind(StrEnum):
+    MESSAGE = "MESSAGE"  # texte libre (humain ou casquette)
+    PLAN = "PLAN"  # plan proposé, à valider avant exécution
+    RESULT = "RESULT"  # livrable proposé, à valider en Review
+    QUESTION = "QUESTION"  # question d'un agent, la tâche attend une réponse
+
+
+# Modèles exposés par la passerelle (infra/litellm/config.yaml).
+AI_MODELS: tuple[str, ...] = ("claude-sonnet", "claude-opus", "gpt", "gemini", "mistral")
+DEFAULT_AI_MODEL = "claude-sonnet"
+
+
 class Environment(StrEnum):
     STAGING = "STAGING"
     PREPROD = "PREPROD"

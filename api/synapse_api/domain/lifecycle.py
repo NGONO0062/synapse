@@ -135,6 +135,32 @@ def apply(
     return _HANDLERS[command](state, now)
 
 
+class PendingDecision(StrEnum):
+    """Ce que la tâche attend d'un humain (accueil : « En attente de ta validation »)."""
+
+    PLAN = "PLAN"  # le PO valide ou fait modifier un plan
+    QUESTION = "QUESTION"  # le PO répond à un agent
+    ESCALATION = "ESCALATION"  # limite QA ou durée atteinte, le PO tranche
+    RESULT = "RESULT"  # le PO valide ou refuse un résultat
+    TESTER_CONFIRMATION = "TESTER_CONFIRMATION"  # le testeur confirme un correctif
+
+
+def pending_decision(state: TaskState) -> PendingDecision | None:
+    if state.status is TaskStatus.TODO and state.has_pending_plan:
+        return PendingDecision.PLAN
+    if state.status is TaskStatus.IN_PROGRESS and state.awaiting_human:
+        return {
+            AwaitingReason.PLAN_CHANGE: PendingDecision.PLAN,
+            AwaitingReason.QUESTION: PendingDecision.QUESTION,
+        }.get(state.awaiting_reason, PendingDecision.ESCALATION)  # type: ignore[arg-type]
+    if state.status is TaskStatus.REVIEW:
+        if not state.result_validated:
+            return PendingDecision.RESULT
+        if state.type is TaskType.BUGFIX and not state.tester_confirmed:
+            return PendingDecision.TESTER_CONFIRMATION
+    return None
+
+
 def is_execution_overdue(state: TaskState, now: datetime) -> bool:
     return (
         state.status is TaskStatus.IN_PROGRESS

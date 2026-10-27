@@ -1,0 +1,38 @@
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.comment {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comment textarea {
+  padding: 10px 14px;
+  border: 1px solid var(--sy-border-strong);
+  border-radius: var(--sy-radius-field);
+  background: var(--sy-bg);
+  resize: vertical;
+}
+
+.comment textarea:focus-visible {
+  outline: none;
+  border-color: var(--sy-ai);
+}
+
+.error {
+  padding: 10px 14px;
+  border-radius: var(--sy-radius-field);
+  background: var(--sy-error-bg);
+  color: var(--sy-error-text);
+  font-size: 14px;
+}

@@ -5,9 +5,9 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from synapse_api.db.models import Project, Task, TaskEvent
-from synapse_api.domain.enums import TaskType
-from synapse_api.domain.lifecycle import Actor, Command, TaskState, apply
+from synapse_api.db.models import Project, Task, TaskEvent, TaskMessage
+from synapse_api.domain.enums import DEFAULT_AI_MODEL, MessageKind, TaskType
+from synapse_api.domain.lifecycle import Actor, ActorKind, Command, TaskState, apply
 
 
 def create_task(
@@ -17,7 +17,9 @@ def create_task(
     type: TaskType,
     title: str,
     description: str,
-    created_by: str,
+    author: Actor,
+    author_subject: str,
+    ai_model: str = DEFAULT_AI_MODEL,
 ) -> Task:
     # Numérotation par projet et par type : FEAT-001, BUG-001, DOC-001…
     # La contrainte d'unicité (project_id, type, number) protège des créations concurrentes.
@@ -30,30 +32,52 @@ def create_task(
         number=(last or 0) + 1,
         title=title,
         description=description,
-        created_by=created_by,
+        created_by=author_subject,
+        ai_model=ai_model,
     )
     session.add(task)
     session.flush()
+    # La demande ouvre le fil de la tâche.
+    add_message(
+        session,
+        task,
+        kind=MessageKind.MESSAGE,
+        author=author,
+        author_subject=author_subject,
+        body=description or title,
+    )
     return task
 
 
-def to_state(task: Task) -> TaskState:
-    started = task.execution_started_at
-    if started is not None and started.tzinfo is None:
-        started = started.replace(tzinfo=UTC)
-    return TaskState(
-        type=task.type,
-        status=task.status,
-        plan_version=task.plan_version,
-        validated_plan_version=task.validated_plan_version,
-        rejected_plan_version=task.rejected_plan_version,
-        awaiting_human=task.awaiting_human,
-        awaiting_reason=task.awaiting_reason,
-        qa_round_trips=task.qa_round_trips,
-        execution_started_at=started,
-        result_validated=task.result_validated,
-        tester_confirmed=task.tester_confirmed,
+def add_message(
+    session: Session,
+    task: Task,
+    *,
+    kind: MessageKind,
+    author: Actor,
+    body: str,
+    author_subject: str | None = None,
+    payload: dict | None = None,
+    plan_version: int | None = None,
+    ai_model: str | None = None,
+) -> TaskMessage:
+    if kind is not MessageKind.MESSAGE and author.kind is not ActorKind.AGENT:
+        raise ValueError("Seule une casquette propose un plan, un résultat ou une question.")
+    message = TaskMessage(
+        task_id=task.id,
+        kind=kind,
+        author_kind=author.kind,
+        author_name=author.name,
+        author_subject=author_subject,
+        casquette=author.casquette.value if author.casquette else None,
+        ai_model=ai_model,
+        body=body,
+        payload=payload,
+        plan_version=plan_version,
     )
+    session.add(message)
+    session.flush()
+    return message
 
 
 def execute(
@@ -69,7 +93,7 @@ def execute(
 ) -> TaskEvent:
     """Applique une commande du cycle de vie et la journalise. Lève LifecycleError."""
     now = now or datetime.now(UTC)
-    before = to_state(task)
+    before = task.lifecycle_state()
     after = apply(before, command, actor, now=now, comment=comment)
 
     for field in TaskState.__dataclass_fields__:

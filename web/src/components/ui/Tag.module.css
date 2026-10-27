@@ -33,3 +33,9 @@
   background: var(--sy-neutral-bg);
   color: var(--sy-neutral-text);
 }
+
+.small {
+  padding: 0 6px;
+  font-size: 11px;
+  line-height: 16px;
+}
