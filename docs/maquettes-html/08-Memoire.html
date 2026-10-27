@@ -1,0 +1,247 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Sora:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+body{margin:0;background:#101114}
+a{color:#AEB7FF}a:hover{color:#CDD3FF}
+</style>
+</head><body>
+
+<div style="min-height: 100vh; display: flex; flex-wrap: wrap; background: #101114; color: #F2F3F5; font-family: 'Manrope', system-ui, sans-serif; font-size: 15px; line-height: 1.5">
+
+<aside aria-label="Tâches du projet" style="flex: 1 1 280px; max-width: 300px; min-width: 0; box-sizing: border-box; background: #0A0B0D; border-right: 1px solid #1D1F25; display: flex; flex-direction: column">
+<a href="Accueil.dc.html" aria-label="Synapse, retour à l’accueil" style="display: flex; align-items: center; gap: 8px; padding: 14px 18px 0; text-decoration: none">
+<img src="../../public/logo-light.png" alt="" style="width: 22px; height: 22px; object-fit: contain">
+<span style="font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: #9BA0AB">Synapse</span>
+</a>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 12px 10px; border-bottom: 1px solid #1D1F25">
+<button type="button" aria-label="Changer de projet" style="display: flex; align-items: center; gap: 8px; min-height: 44px; min-width: 0; padding: 0 6px; border: none; border-radius: 8px; background: transparent; color: #F2F3F5; font-family: 'Sora', system-ui, sans-serif; font-size: 19px; font-weight: 600; line-height: 1.25; text-align: left; cursor: pointer">Gestion des feuilles de temps<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M3.5 5.5L7 9l3.5-3.5"></path></svg></button>
+<button type="button" aria-label="Nouvelle tâche" style="flex: none; width: 40px; height: 40px; border: 1px solid #2A2D35; border-radius: 50%; background: #17181C; color: #F2F3F5; cursor: pointer; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 3v10M3 8h10"></path></svg></button>
+</div>
+<nav aria-label="Tâches par statut" style="flex: 1 1 auto; display: flex; flex-direction: column; gap: 16px; padding: 12px 8px 20px">
+
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #9BA0AB"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #5C616B"></span>Backlog<span style="margin-left: auto; font-weight: 500">2</span></span>
+
+<a href="Agent.dc.html" style="display: flex; flex-direction: column; justify-content: center; min-height: 44px; padding: 4px 10px; border-radius: 8px; color: #F2F3F5; text-decoration: none">
+<span style="font-size: 14px; line-height: 1.35">Rappel de saisie le vendredi</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #9BA0AB"><span style="padding: 0 6px; border-radius: 999px; font-weight: 600; background: #2A2E52; color: #C2C9FF">Feature</span><span style="font-family: 'IBM Plex Mono', monospace">FEAT-018</span></span>
+</a>
+
+<a href="Agent.dc.html" style="display: flex; flex-direction: column; justify-content: center; min-height: 44px; padding: 4px 10px; border-radius: 8px; color: #F2F3F5; text-decoration: none">
+<span style="font-size: 14px; line-height: 1.35">Guide utilisateur de l’export PDF</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #9BA0AB"><span style="padding: 0 6px; border-radius: 999px; font-weight: 600; background: #262931; color: #DDE0E6">Doc</span><span style="font-family: 'IBM Plex Mono', monospace">DOC-003</span></span>
+</a>
+
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #9BA0AB"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #9BA0AB"></span>To do<span style="margin-left: auto; font-weight: 500">1</span></span>
+
+<a href="Agent.dc.html" style="display: flex; flex-direction: column; justify-content: center; min-height: 44px; padding: 4px 10px; border-radius: 8px; color: #F2F3F5; text-decoration: none">
+<span style="font-size: 14px; line-height: 1.35">Export PDF des feuilles de temps</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #9BA0AB"><span style="padding: 0 6px; border-radius: 999px; font-weight: 600; background: #2A2E52; color: #C2C9FF">Feature</span><span style="font-family: 'IBM Plex Mono', monospace">FEAT-019</span></span>
+</a>
+
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #9BA0AB"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #8E9BFF"></span>In progress<span style="margin-left: auto; font-weight: 500">1</span></span>
+
+<a href="Agent.dc.html" style="display: flex; flex-direction: column; justify-content: center; min-height: 44px; padding: 4px 10px; border-radius: 8px; color: #F2F3F5; text-decoration: none">
+<span style="font-size: 14px; line-height: 1.35">Délégation de validation</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #9BA0AB"><span style="padding: 0 6px; border-radius: 999px; font-weight: 600; background: #2A2E52; color: #C2C9FF">Feature</span><span style="font-family: 'IBM Plex Mono', monospace">FEAT-016</span></span>
+</a>
+
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #9BA0AB"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #3FBF9A"></span>Review<span style="margin-left: auto; font-weight: 500">1</span></span>
+
+<a href="AgentBug.dc.html" style="display: flex; flex-direction: column; justify-content: center; min-height: 44px; padding: 4px 10px; border-radius: 8px; color: #F2F3F5; text-decoration: none">
+<span style="font-size: 14px; line-height: 1.35">Total hebdomadaire erroné</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #9BA0AB"><span style="padding: 0 6px; border-radius: 999px; font-weight: 600; background: #3A1B18; color: #F2A7A0">Bugfix</span><span style="font-family: 'IBM Plex Mono', monospace">BUG-041</span></span>
+</a>
+
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="display: flex; align-items: center; gap: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #9BA0AB"><span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #6E737D"></span>Done<span style="margin-left: auto; font-weight: 500">1</span></span>
+
+<a href="Agent.dc.html" style="display: flex; flex-direction: column; justify-content: center; min-height: 44px; padding: 4px 10px; border-radius: 8px; color: #F2F3F5; text-decoration: none">
+<span style="font-size: 14px; line-height: 1.35">Historique des modifications</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #9BA0AB"><span style="padding: 0 6px; border-radius: 999px; font-weight: 600; background: #2A2E52; color: #C2C9FF">Feature</span><span style="font-family: 'IBM Plex Mono', monospace">FEAT-014</span></span>
+</a>
+
+</div>
+
+</nav>
+<button type="button" aria-label="Mon compte : Aline Mbarga, Product Owner" style="display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 10px 14px; border: none; border-top: 1px solid #1D1F25; background: transparent; color: #F2F3F5; font-family: inherit; text-align: left; cursor: pointer">
+<span aria-hidden="true" style="flex: none; width: 34px; height: 34px; border-radius: 50%; background: #173A30; color: #7FE0C2; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center">AM</span>
+<span style="flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.3"><span style="font-size: 14px; font-weight: 500">Aline Mbarga</span><span style="font-size: 12px; color: #9BA0AB">Product Owner · aline.mbarga@orion.cm</span></span>
+<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#9BA0AB" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="flex: none"><path d="M4 8.5L7 5.5l3 3"></path></svg>
+</button>
+</aside>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 40px 32px 64px; display: flex; flex-direction: column; align-items: center">
+<div style="width: 100%; max-width: 1120px; display: flex; flex-direction: column; gap: 24px">
+<nav aria-label="Projet" style="display: flex; flex-wrap: wrap; gap: 6px">
+<a href="Agent.dc.html" style="display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border-radius: 999px; color: #9BA0AB; text-decoration: none; font-size: 14px">← Tâches</a>
+<a href="Memoire.dc.html" aria-current="page" style="display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border-radius: 999px; background: #1F2127; color: #F2F3F5; text-decoration: none; font-size: 14px; font-weight: 600">Mémoire du projet</a>
+<a href="Environnements.dc.html"  style="display: inline-flex; align-items: center; min-height: 38px; padding: 0 14px; border-radius: 999px; background: transparent; color: #9BA0AB; text-decoration: none; font-size: 14px; font-weight: 600">Environnements</a>
+</nav>
+
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-family: 'Sora', system-ui, sans-serif; font-size: 34px; font-weight: 600; letter-spacing: -0.01em">Mémoire du projet</h1>
+</div>
+<span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #9BA0AB">orion-dsi/feuilles-de-temps</span>
+</div>
+
+<div role="tablist" aria-label="Documents" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px">
+
+<button type="button" role="tab" aria-selected="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 84px; padding: 12px 14px; border: 1px solid #2A2D35; border-radius: 12px; background: #17181C; color: #F2F3F5; font-family: inherit; text-align: left; cursor: pointer">
+<span style="font-size: 14px; font-weight: 600">Exigences</span>
+<span style="font-size: 12px; color: #9BA0AB">v3 · 24 exigences</span>
+<span style="padding: 0 7px; border-radius: 999px; background: #173A30; color: #7FE0C2; font-size: 11px; font-weight: 600">Validé</span>
+</button>
+
+<button type="button" role="tab" aria-selected="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 84px; padding: 12px 14px; border: 1px solid #2A2D35; border-radius: 12px; background: #17181C; color: #F2F3F5; font-family: inherit; text-align: left; cursor: pointer">
+<span style="font-size: 14px; font-weight: 600">Maquettes</span>
+<span style="font-size: 12px; color: #9BA0AB">v1 · 9 écrans</span>
+<span style="padding: 0 7px; border-radius: 999px; background: #173A30; color: #7FE0C2; font-size: 11px; font-weight: 600">Validé</span>
+</button>
+
+<button type="button" role="tab" aria-selected="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 84px; padding: 12px 14px; border: 1px solid #2A2D35; border-radius: 12px; background: #17181C; color: #F2F3F5; font-family: inherit; text-align: left; cursor: pointer">
+<span style="font-size: 14px; font-weight: 600">Architecture</span>
+<span style="font-size: 12px; color: #9BA0AB">v2 · modèle de données</span>
+<span style="padding: 0 7px; border-radius: 999px; background: #173A30; color: #7FE0C2; font-size: 11px; font-weight: 600">Validé</span>
+</button>
+
+<button type="button" role="tab" aria-selected="true" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 84px; padding: 12px 14px; border: 1px solid #8E9BFF; border-radius: 12px; background: #1F2127; color: #F2F3F5; font-family: inherit; text-align: left; cursor: pointer">
+<span style="font-size: 14px; font-weight: 600">Scénarios</span>
+<span style="font-size: 12px; color: #9BA0AB">v5 · modèle Excel</span>
+<span style="padding: 0 7px; border-radius: 999px; background: #173A30; color: #7FE0C2; font-size: 11px; font-weight: 600">Validé</span>
+</button>
+
+<button type="button" role="tab" aria-selected="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 84px; padding: 12px 14px; border: 1px solid #2A2D35; border-radius: 12px; background: #17181C; color: #F2F3F5; font-family: inherit; text-align: left; cursor: pointer">
+<span style="font-size: 14px; font-weight: 600">Tests E2E</span>
+<span style="font-size: 12px; color: #9BA0AB">12 parcours critiques</span>
+<span style="padding: 0 7px; border-radius: 999px; background: #173A30; color: #7FE0C2; font-size: 11px; font-weight: 600">Validé</span>
+</button>
+
+<button type="button" role="tab" aria-selected="false" style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-height: 84px; padding: 12px 14px; border: 1px solid #2A2D35; border-radius: 12px; background: #17181C; color: #F2F3F5; font-family: inherit; text-align: left; cursor: pointer">
+<span style="font-size: 14px; font-weight: 600">Décisions</span>
+<span style="font-size: 12px; color: #9BA0AB">8 décisions</span>
+<span style="padding: 0 7px; border-radius: 999px; background: #173A30; color: #7FE0C2; font-size: 11px; font-weight: 600">Validé</span>
+</button>
+
+</div>
+
+
+<section aria-labelledby="h-scen" style="display: flex; flex-direction: column; gap: 12px; padding: 20px; border: 1px solid #2A2D35; border-radius: 22px; background: #17181C">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px">
+<h2 id="h-scen" style="margin: 0; font-size: 16px; font-weight: 600">Scénarios de test · version 5</h2>
+<a href="#" style="display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 14px; border: 1px solid #353943; border-radius: 999px; color: #F2F3F5; text-decoration: none; font-size: 14px"><svg aria-hidden="true" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M8 2v9M4.5 7.5L8 11l3.5-3.5M3 14h10"></path></svg>Télécharger l’Excel</a>
+</div>
+<p style="margin: 0; font-size: 13px; color: #9BA0AB">Aperçu des dernières lignes ajoutées au modèle.</p>
+<div style="overflow-x: auto">
+<table style="width: 100%; min-width: 980px; border-collapse: collapse; font-size: 13px">
+<thead>
+<tr style="text-align: left; font-size: 12px; color: #9BA0AB">
+<th scope="col" style="padding: 8px 10px 8px 0; font-weight: 600; border-bottom: 1px solid #2A2D35">Module</th>
+<th scope="col" style="padding: 8px 10px; font-weight: 600; border-bottom: 1px solid #2A2D35">Scénario</th>
+<th scope="col" style="padding: 8px 10px; font-weight: 600; border-bottom: 1px solid #2A2D35">Préconditions</th>
+<th scope="col" style="padding: 8px 10px; font-weight: 600; border-bottom: 1px solid #2A2D35">Étapes</th>
+<th scope="col" style="padding: 8px 10px; font-weight: 600; border-bottom: 1px solid #2A2D35">Résultat attendu</th>
+<th scope="col" style="padding: 8px 10px; font-weight: 600; border-bottom: 1px solid #2A2D35; text-align: center">Chrome</th>
+<th scope="col" style="padding: 8px 10px; font-weight: 600; border-bottom: 1px solid #2A2D35; text-align: center">Firefox</th>
+<th scope="col" style="padding: 8px 10px; font-weight: 600; border-bottom: 1px solid #2A2D35; text-align: center">iOS</th>
+<th scope="col" style="padding: 8px 10px; font-weight: 600; border-bottom: 1px solid #2A2D35; text-align: center">Android</th>
+</tr>
+</thead>
+<tbody>
+
+<tr style="vertical-align: top">
+<td style="padding: 10px 10px 10px 0; border-bottom: 1px solid #23262D; font-weight: 600">Export PDF</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D">Exporter une feuille de temps validée</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D; color: #C5C9D1">Collaborateur connecté ; une feuille validée existe</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D; color: #C5C9D1; white-space: pre-line">1. Ouvrir la feuille
+2. Cliquer sur Exporter en PDF
+3. Ouvrir le fichier</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D; color: #C5C9D1">Le PDF reprend l’en-tête, le détail par jour et le total de la semaine</td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #173A30; color: #7FE0C2">Passed</span></td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #173A30; color: #7FE0C2">Passed</span></td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #3A1B18; color: #F2A7A0">Failed</span></td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #262931; color: #C5C9D1">Not started</span></td>
+
+</tr>
+
+<tr style="vertical-align: top">
+<td style="padding: 10px 10px 10px 0; border-bottom: 1px solid #23262D; font-weight: 600">Export PDF</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D">Bouton absent sur une feuille brouillon</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D; color: #C5C9D1">Une feuille au statut brouillon existe</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D; color: #C5C9D1; white-space: pre-line">1. Ouvrir la feuille brouillon</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D; color: #C5C9D1">Le bouton Exporter en PDF n’est pas affiché</td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #173A30; color: #7FE0C2">Passed</span></td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #173A30; color: #7FE0C2">Passed</span></td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #262931; color: #C5C9D1">Not started</span></td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #262931; color: #C5C9D1">Not started</span></td>
+
+</tr>
+
+<tr style="vertical-align: top">
+<td style="padding: 10px 10px 10px 0; border-bottom: 1px solid #23262D; font-weight: 600">Saisie des heures</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D">Total d’une semaine avec un samedi travaillé</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D; color: #C5C9D1">Collaborateur connecté</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D; color: #C5C9D1; white-space: pre-line">1. Saisir 8 h du lundi au vendredi
+2. Saisir 2 h le samedi</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D; color: #C5C9D1">Le total de la semaine affiche 42 h</td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #173A30; color: #7FE0C2">Passed</span></td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #173A30; color: #7FE0C2">Passed</span></td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #173A30; color: #7FE0C2">Passed</span></td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #3A1B18; color: #F2A7A0">Failed</span></td>
+
+</tr>
+
+<tr style="vertical-align: top">
+<td style="padding: 10px 10px 10px 0; border-bottom: 1px solid #23262D; font-weight: 600">Validation</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D">Un manager ne valide pas sa propre feuille</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D; color: #C5C9D1">Manager connecté avec une feuille soumise</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D; color: #C5C9D1; white-space: pre-line">1. Ouvrir sa propre feuille
+2. Chercher le bouton Valider</td>
+<td style="padding: 10px; border-bottom: 1px solid #23262D; color: #C5C9D1">Le bouton Valider est désactivé avec un message</td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #262931; color: #C5C9D1">Not started</span></td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #262931; color: #C5C9D1">Not started</span></td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #262931; color: #C5C9D1">Not started</span></td>
+
+<td style="padding: 10px 6px; border-bottom: 1px solid #23262D; text-align: center"><span style="display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; background: #262931; color: #C5C9D1">Not started</span></td>
+
+</tr>
+
+</tbody>
+</table>
+</div>
+</section>
+
+
+
+
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,35 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.input {
+  min-height: 46px;
+  padding: 0 14px;
+  background: var(--sy-bg);
+  border: 1px solid var(--sy-border-strong);
+  font-size: 15px;
+  border-radius: var(--sy-radius-field);
+}
+
+.input::placeholder {
+  color: var(--sy-placeholder);
+}
+
+.input:focus-visible {
+  outline: none;
+  border-color: var(--sy-ai);
+}

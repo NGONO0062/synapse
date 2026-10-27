@@ -1,0 +1,35 @@
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: var(--sy-radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.ai {
+  background: var(--sy-ai-bg);
+  color: var(--sy-ai-text);
+}
+
+.human {
+  background: var(--sy-human-bg);
+  color: var(--sy-human-text);
+}
+
+.error {
+  background: var(--sy-error-bg);
+  color: var(--sy-error-text);
+}
+
+.warn {
+  background: var(--sy-warn-bg);
+  color: var(--sy-warn-text);
+}
+
+.neutral {
+  background: var(--sy-neutral-bg);
+  color: var(--sy-neutral-text);
+}

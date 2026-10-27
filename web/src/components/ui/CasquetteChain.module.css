@@ -1,0 +1,73 @@
+.chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px 3px 4px;
+  border: 1px solid var(--sy-border);
+  border-radius: var(--sy-radius-pill);
+  font-size: 12px;
+  color: var(--sy-text-muted);
+}
+
+.step {
+  position: relative;
+}
+
+.step + .step {
+  margin-left: 24px;
+}
+
+/* Trait qui relie deux nœuds. */
+.step + .step::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -21px;
+  width: 18px;
+  height: 1px;
+  background: var(--sy-border-strong);
+}
+
+.node {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--sy-border-strong);
+  font-family: var(--sy-font-mono);
+  font-size: 9px;
+}
+
+.done {
+  color: var(--sy-text-soft);
+}
+
+.done .node {
+  background: var(--sy-text);
+  border-color: var(--sy-text);
+  color: var(--sy-bg);
+  font-size: 11px;
+}
+
+.active {
+  background: var(--sy-ai-bg);
+  border-color: var(--sy-ai);
+  color: var(--sy-ai-text);
+}
+
+.active .node {
+  background: var(--sy-ai);
+  border-color: var(--sy-ai);
+  color: var(--sy-ai-bg);
+}

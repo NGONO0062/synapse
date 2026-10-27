@@ -1,0 +1,60 @@
+# Environnement de développement local de Synapse.
+# Les mots de passe viennent de infra/.env (copier .env.example) : aucun secret dans le dépôt.
+name: synapse
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: synapse
+      POSTGRES_USER: synapse
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?définir POSTGRES_PASSWORD dans infra/.env}
+    ports: ["5432:5432"]
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U synapse -d synapse"]
+      interval: 5s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?définir KEYCLOAK_ADMIN_PASSWORD dans infra/.env}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: synapse
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+    ports: ["8080:8080"]
+    volumes:
+      - ./keycloak/synapse-realm.json:/opt/keycloak/data/import/synapse-realm.json:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Stockage objet compatible S3 : modèles Excel, captures, documents joints.
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: synapse
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?définir MINIO_ROOT_PASSWORD dans infra/.env}
+    ports: ["9000:9000", "9001:9001"]
+    volumes:
+      - minio-data:/data
+
+  # Passerelle unique vers les modèles IA. Les clés des fournisseurs restent dans infra/.env.
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    env_file: [.env]
+    ports: ["4000:4000"]
+    volumes:
+      - ./litellm/config.yaml:/app/config.yaml:ro
+
+volumes:
+  postgres-data:
+  minio-data:

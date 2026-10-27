@@ -1,0 +1,74 @@
+@import "../styles/tokens.css";
+
+/* next/font renomme les familles : on rebranche les jetons sur ses variables. */
+:root {
+  --sy-font-display: var(--font-sora), system-ui, sans-serif;
+  --sy-font-body: var(--font-manrope), system-ui, sans-serif;
+  --sy-font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  color-scheme: dark;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--sy-bg);
+  color: var(--sy-text);
+  font-family: var(--sy-font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--sy-font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: var(--sy-link);
+}
+
+code,
+kbd {
+  font-family: var(--sy-font-mono);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--sy-ai);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

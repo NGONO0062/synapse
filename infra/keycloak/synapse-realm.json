@@ -1,0 +1,68 @@
+{
+  "realm": "synapse",
+  "enabled": true,
+  "displayName": "Synapse",
+  "internationalizationEnabled": true,
+  "supportedLocales": ["fr"],
+  "defaultLocale": "fr",
+  "resetPasswordAllowed": true,
+  "loginWithEmailAllowed": true,
+  "roles": {
+    "realm": [
+      { "name": "PO", "description": "Product Owner" },
+      { "name": "TESTEUR", "description": "Testeur" },
+      { "name": "ADMIN", "description": "Administrateur d'espace" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "synapse-web",
+      "name": "Synapse (interface)",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "protocolMappers": [
+        {
+          "name": "audience-synapse-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "synapse-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "synapse-api",
+      "name": "Synapse (API)",
+      "bearerOnly": true,
+      "publicClient": false,
+      "standardFlowEnabled": false
+    }
+  ],
+  "users": [
+    {
+      "username": "aline",
+      "email": "aline.mbarga@orion.cm",
+      "firstName": "Aline",
+      "lastName": "Mbarga",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": ["PO"]
+    },
+    {
+      "username": "brice",
+      "email": "b.nkoulou@orion.cm",
+      "firstName": "Brice",
+      "lastName": "Nkoulou",
+      "enabled": true,
+      "emailVerified": true,
+      "realmRoles": ["TESTEUR"]
+    }
+  ]
+}

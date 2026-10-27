@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets locaux
+.env
+infra/.env
+
+# Divers
+.DS_Store
+*.db

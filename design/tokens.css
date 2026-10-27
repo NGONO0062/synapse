@@ -1,0 +1,63 @@
+/* Synapse — jetons du design system (thème sombre) */
+:root {
+  /* Surfaces */
+  --sy-sidebar: #0A0B0D;
+  --sy-bg: #101114;
+  --sy-surface: #17181C;
+  --sy-surface-active: #1F2127;
+  --sy-border: #2A2D35;
+  --sy-border-soft: #23262D;
+  --sy-border-strong: #353943;
+
+  /* Texte */
+  --sy-text: #F2F3F5;
+  --sy-text-muted: #9BA0AB;
+  --sy-text-soft: #C5C9D1;
+  --sy-placeholder: #7D828D;
+  --sy-link: #AEB7FF;
+
+  /* IA (indigo) */
+  --sy-ai: #8E9BFF;
+  --sy-ai-bg: #2A2E52;
+  --sy-ai-text: #C2C9FF;
+
+  /* Humain (vert) : décisions humaines uniquement */
+  --sy-human: #3FBF9A;
+  --sy-human-bg: #173A30;
+  --sy-human-text: #7FE0C2;
+  --sy-human-on: #0E2A22;
+
+  /* Bugfix / erreur */
+  --sy-error-bg: #3A1B18;
+  --sy-error-text: #F2A7A0;
+
+  /* Attention */
+  --sy-warn-bg: #3A2614;
+  --sy-warn-text: #F5C493;
+
+  /* Neutre (Doc, Not started) */
+  --sy-neutral-bg: #262931;
+  --sy-neutral-text: #DDE0E6;
+
+  /* Statuts des tâches */
+  --sy-status-backlog: #5C616B;
+  --sy-status-todo: #9BA0AB;
+  --sy-status-in-progress: #8E9BFF;
+  --sy-status-review: #3FBF9A;
+  --sy-status-done: #6E737D;
+
+  /* Typographie */
+  --sy-font-display: 'Sora', system-ui, sans-serif;
+  --sy-font-body: 'Manrope', system-ui, sans-serif;
+  --sy-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Rayons */
+  --sy-radius-pill: 999px;
+  --sy-radius-card: 20px;
+  --sy-radius-card-lg: 22px;
+  --sy-radius-composer: 26px;
+  --sy-radius-field: 14px;
+
+  /* Divers */
+  --sy-touch: 44px;
+}
