@@ -92,6 +92,19 @@ class ReformulatedReport(BugReport):
     title: str = Field(min_length=1, max_length=300)
 
 
+class ActivityOut(BaseModel):
+    """Ce qu'une casquette fait en ce moment sur la tâche (indicateur de travail)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    casquette: str
+    step: str
+    started_at: datetime
+    updated_at: datetime
+    error: str | None
+    retry_at: datetime | None
+
+
 class TaskOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -110,6 +123,7 @@ class TaskOut(BaseModel):
     validated_report_version: int
     rejected_report_version: int
     pending_decision: PendingDecision | None
+    activity: ActivityOut | None
     awaiting_human: bool
     awaiting_reason: AwaitingReason | None
     plan_version: int

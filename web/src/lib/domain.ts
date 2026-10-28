@@ -85,9 +85,8 @@ export const AI_MODELS = [
   { id: "gpt", label: "GPT" },
   { id: "gemini", label: "Gemini" },
   { id: "mistral", label: "Mistral" },
+  { id: "local", label: "Local (Ollama)" },
 ] as const;
-
-export const DEFAULT_AI_MODEL = "claude-sonnet";
 
 export function modelLabel(id: string): string {
   return AI_MODELS.find((m) => m.id === id)?.label ?? id;

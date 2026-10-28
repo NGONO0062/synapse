@@ -2,7 +2,7 @@
 
 import { useActionState, type KeyboardEvent } from "react";
 import type { ActionState } from "@/app/actions";
-import { AI_MODELS, DEFAULT_AI_MODEL, TYPE_LABELS, type TaskType } from "@/lib/domain";
+import { AI_MODELS, TYPE_LABELS, type TaskType } from "@/lib/domain";
 import styles from "./Composer.module.css";
 
 type Props = {
@@ -11,7 +11,7 @@ type Props = {
   label: string;
   placeholder: string;
   taskTypes?: readonly TaskType[]; // sélecteur de type (création de tâche)
-  chooseModel?: boolean; // sélecteur de modèle IA (création de tâche)
+  chooseModel?: string; // sélecteur de modèle IA (création de tâche), présélectionné sur ce modèle
   modelName?: string; // modèle de la tâche, affiché en lecture seule
 };
 
@@ -70,7 +70,7 @@ export function Composer({ action, field, label, placeholder, taskTypes, chooseM
               <label htmlFor="composer-model" className="sr-only">
                 Modèle IA
               </label>
-              <select id="composer-model" name="ai_model" className={styles.select} defaultValue={DEFAULT_AI_MODEL}>
+              <select id="composer-model" name="ai_model" className={styles.select} defaultValue={chooseModel}>
                 {AI_MODELS.map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.label}

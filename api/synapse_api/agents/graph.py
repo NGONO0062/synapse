@@ -14,6 +14,7 @@ import uuid
 
 from langgraph.graph import END, START, StateGraph
 
+from synapse_api.agents import activity
 from synapse_api.agents.casquettes import LABELS, referentiel, system_prompt
 from synapse_api.agents.execution import execution_graph
 from synapse_api.agents.jobs import AUTHORS, JOBS, Assignment, Job, Review, assignment_for, brief
@@ -25,6 +26,8 @@ from synapse_api.domain.lifecycle import Actor
 # Au-delà, la proposition part quand même, avec les points non résolus en avertissement :
 # c'est l'humain qui tranche.
 MAX_DRAFTS = 3
+DRAFT_STEPS = {Job.REPORT: "reformule le signalement", Job.PLAN: "rédige le plan"}
+
 # Étapes LangGraph permises par fil : une exécution enchaîne réalisation, relecture et QA.
 RECURSION_LIMIT = 200
 
@@ -41,6 +44,7 @@ def casquette_graph(casquette: Casquette, deps: Deps):
     def draft(state: WorkState) -> WorkState:
         a = Assignment.from_state(state)
         spec = JOBS[a.job]
+        activity.report(deps.sessions, a.task_id, casquette, DRAFT_STEPS[a.job])
         prompt = f"{state['brief']}\n\nTa mission : {spec.instruction(a.job, a.task_type)}"
         if state.get("feedback"):
             prompt += (
@@ -60,6 +64,7 @@ def casquette_graph(casquette: Casquette, deps: Deps):
 
     def review(state: WorkState) -> WorkState:
         a = Assignment.from_state(state)
+        activity.report(deps.sessions, a.task_id, a.reviewer, "relit la proposition")
         prompt = (
             f"{state['brief']}\n\nProposition du {LABELS[casquette]} :\n"
             f"{json.dumps(state['draft'], ensure_ascii=False, indent=2)}\n\n"

@@ -109,6 +109,8 @@ def safe_path(path: str) -> str:
 
 class Workspace:
     def __init__(self, root: Path, project_id: uuid.UUID, task_id: uuid.UUID, branch: str) -> None:
+        # Chemins absolus : Git se lance depuis plusieurs dossiers (git_dir vaut « var » par défaut).
+        root = root.resolve()
         self.repo = root / "repos" / f"{project_id}.git"
         self.path = root / "workspaces" / str(task_id)
         self.branch = branch

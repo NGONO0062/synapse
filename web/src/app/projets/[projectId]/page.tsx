@@ -5,7 +5,7 @@ import { createTask } from "@/app/actions";
 import { BugForm } from "@/components/task/BugForm";
 import { Composer } from "@/components/task/Composer";
 import { Logo } from "@/components/ui/Logo";
-import { apiFind, type Project } from "@/lib/api";
+import { apiFind, apiGet, type Models, type Project } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth/current-user";
 import { TASK_TYPES } from "@/lib/domain";
 import styles from "./page.module.css";
@@ -21,7 +21,11 @@ export default function ProjectPage({ params }: PageProps<"/projets/[projectId]"
 
 async function ProjectHome({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
-  const [project, user] = await Promise.all([apiFind<Project>(`/projects/${projectId}`), getCurrentUser()]);
+  const [project, user, models] = await Promise.all([
+    apiFind<Project>(`/projects/${projectId}`),
+    getCurrentUser(),
+    apiGet<Models>("/models"),
+  ]);
   if (!project) notFound();
   if (!user.roles.includes("PO")) {
     // Le testeur arrive directement sur le signalement (écran 6).
@@ -51,7 +55,7 @@ async function ProjectHome({ params }: { params: Promise<{ projectId: string }> 
         label="Nouvelle demande"
         placeholder="Décris une feature, un bugfix ou une doc…"
         taskTypes={TASK_TYPES}
-        chooseModel
+        chooseModel={models.default}
       />
     </main>
   );

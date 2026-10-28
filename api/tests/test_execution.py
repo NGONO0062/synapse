@@ -113,6 +113,19 @@ def test_feature_is_built_reviewed_tested_then_submitted(clients, team, tmp_path
     assert git(repo, "ls-tree", "-r", "--name-only", "main") == ""
 
 
+def test_relative_git_dir_works(clients, session_factory, tmp_path, monkeypatch):
+    # Réglage par défaut : git_dir = « var », relatif au dossier de lancement du worker.
+    monkeypatch.chdir(tmp_path)
+    model = ScriptedModel(PlanDraft=[PLAN], Review=[APPROVED], Implementation=[CODE])
+    deps = Deps(sessions=session_factory, model=model, sandbox=FakeSandbox(True), git_dir=Path("var"))
+    graph = build_orchestrator(deps, InMemorySaver())
+    task = new_task(clients, new_project(clients))["id"]
+    in_progress(clients, lambda: run_once(graph, deps), task)
+
+    assert list(run_once(graph, deps).values()) == ["published"]
+    assert len(list((tmp_path / "var" / "repos").glob("*.git"))) == 1
+
+
 def test_bug_is_reproduced_by_a_failing_test_before_the_fix(clients, team, tmp_path):
     bug = clients.as_(TESTEUR).post(f"/projects/{new_project(clients)}/bugs", json=BUG).json()["id"]
     failing = PLAN | {"failing_test": "✕ le samedi n'est pas compté"}

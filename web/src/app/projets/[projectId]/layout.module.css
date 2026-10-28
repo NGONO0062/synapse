@@ -110,6 +110,11 @@
   color: var(--sy-warn-text);
 }
 
+.working {
+  display: inline-flex;
+  align-items: center;
+}
+
 .caption {
   padding: 0 10px;
   font-size: 12px;

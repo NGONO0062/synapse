@@ -49,6 +49,9 @@ export async function apiSend<T>(method: "POST" | "PUT" | "DELETE", path: string
   return { ok: false, error };
 }
 
+/** Modèles exposés par la passerelle, et celui des tâches créées sans choix explicite. */
+export type Models = { models: string[]; default: string };
+
 export type Me = { subject: string; name: string; email: string | null; roles: string[] };
 
 export type Project = { id: string; name: string; description: string; created_at: string };
@@ -67,6 +70,16 @@ export type BugReport = {
   severity: "BLOQUANT" | "MAJEUR" | "MINEUR";
 };
 
+/** Travail en cours d'une casquette sur une tâche, ou son dernier échec. */
+export type TaskActivity = {
+  casquette: Casquette;
+  step: string;
+  started_at: string;
+  updated_at: string;
+  error: string | null;
+  retry_at: string | null;
+};
+
 export type Task = {
   id: string;
   project_id: string;
@@ -83,6 +96,7 @@ export type Task = {
   validated_report_version: number;
   rejected_report_version: number;
   pending_decision: PendingDecision | null;
+  activity: TaskActivity | null; // ce qu'une casquette fait en ce moment
   awaiting_human: boolean;
   awaiting_reason: "QUESTION" | "PLAN_CHANGE" | "QA_LIMIT" | "TIMEOUT" | null;
   plan_version: number;

@@ -120,6 +120,7 @@ class Task(Base):
     messages: Mapped[list["TaskMessage"]] = relationship(
         back_populates="task", order_by="TaskMessage.created_at"
     )
+    activity: Mapped["TaskActivity | None"] = relationship(back_populates="task", lazy="selectin")
 
     __mapper_args__ = {"version_id_col": row_version}
 
@@ -197,3 +198,23 @@ class TaskMessage(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     task: Mapped[Task] = relationship(back_populates="messages")
+
+
+class TaskActivity(Base):
+    """Ce qu'une casquette fait en ce moment sur la tâche, écrit par l'orchestrateur.
+
+    Table à part : la tâche porte un verrou de version, et l'activité change sans cesse
+    pendant que l'humain peut décider."""
+
+    __tablename__ = "task_activities"
+
+    task_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tasks.id"), primary_key=True)
+    casquette: Mapped[str] = mapped_column(String(32))
+    step: Mapped[str] = mapped_column(String(200))  # « rédige le plan », « lance les tests »…
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    # Dernier échec (modèle injoignable, clé absente…) et heure du prochain essai.
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    task: Mapped[Task] = relationship(back_populates="activity")

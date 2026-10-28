@@ -2,6 +2,8 @@
 
 from enum import StrEnum
 
+from synapse_api.config import get_settings
+
 
 class Role(StrEnum):
     PO = "PO"
@@ -53,8 +55,11 @@ class MessageKind(StrEnum):
 
 
 # Modèles exposés par la passerelle (infra/litellm/config.yaml).
-AI_MODELS: tuple[str, ...] = ("claude-sonnet", "claude-opus", "gpt", "gemini", "mistral")
-DEFAULT_AI_MODEL = "claude-sonnet"
+AI_MODELS: tuple[str, ...] = ("claude-sonnet", "claude-opus", "gpt", "gemini", "mistral", "local")
+# Réglable (SYNAPSE_DEFAULT_AI_MODEL), par exemple sur un modèle gratuit en attendant les clés.
+DEFAULT_AI_MODEL = get_settings().default_ai_model
+if DEFAULT_AI_MODEL not in AI_MODELS:
+    raise ValueError(f"SYNAPSE_DEFAULT_AI_MODEL inconnu : {DEFAULT_AI_MODEL}, attendu : {AI_MODELS}.")
 
 
 class Environment(StrEnum):

@@ -24,6 +24,11 @@ export function dayAndTime(iso: string, now: Date = new Date()): string {
   return `${day}, ${timeFmt.format(date)}`;
 }
 
+/** Heure seule : « 12:45 ». */
+export function clockTime(iso: string): string {
+  return timeFmt.format(new Date(iso));
+}
+
 export function initials(name: string): string {
   return name
     .split(/\s+/)

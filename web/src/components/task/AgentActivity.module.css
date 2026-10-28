@@ -1,0 +1,71 @@
+.activity {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border: 1px solid var(--sy-border-soft);
+  border-radius: var(--sy-radius-card);
+  background: var(--sy-surface);
+  color: var(--sy-text-soft);
+  font-size: 15px;
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.text strong {
+  color: var(--sy-ai-text);
+  font-weight: 600;
+}
+
+.meta {
+  color: var(--sy-text-muted);
+  font-size: 13px;
+}
+
+.blocked {
+  align-items: flex-start;
+  border-color: transparent;
+  background: var(--sy-warn-bg);
+  color: var(--sy-warn-text);
+}
+
+.blocked svg {
+  flex: none;
+  margin-top: 2px;
+}
+
+.blocked .text strong,
+.blocked .meta {
+  color: var(--sy-warn-text);
+}
+
+/* Travail en cours : le logo de Synapse (le noyau et ses casquettes) tourne et respire. */
+.spinner {
+  flex: none;
+  animation:
+    spin 1.8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite,
+    breathe 1.8s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Mouvement réduit : le logo ne tourne plus, il respire seulement. */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: breathe 2.4s ease-in-out infinite;
+  }
+}

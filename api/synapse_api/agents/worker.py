@@ -9,11 +9,12 @@ L'état des graphes est sauvegardé dans PostgreSQL (tables du checkpointer Lang
 import argparse
 import logging
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from langgraph.checkpoint.postgres import PostgresSaver
 from sqlalchemy import select
 
+from synapse_api.agents import activity
 from synapse_api.agents.casquettes import LABELS
 from synapse_api.agents.gateway import LiteLLMModel
 from synapse_api.agents.graph import Deps, build_orchestrator, run
@@ -29,6 +30,18 @@ from synapse_api.services import add_message, execute
 log = logging.getLogger("synapse.orchestrateur")
 
 JOB_LABELS = {Job.REPORT: "reformulation", Job.PLAN: "plan", Job.EXECUTE: "exécution"}
+
+
+def describe(exc: Exception) -> str:
+    """Raison d'un échec, lisible par le PO dans l'interface."""
+    text = str(exc)
+    lowered = text.lower()
+    if any(k in lowered for k in ("api_key", "api key", "authentication", "401", "403")):
+        return "Le fournisseur de ce modèle refuse l'accès : clé absente ou invalide dans infra/.env."
+    if "connection error" in lowered or isinstance(exc, ConnectionError):
+        return "La passerelle IA (LiteLLM) ne répond pas."
+    first = text.strip().splitlines()[0] if text.strip() else type(exc).__name__
+    return first[:300]
 
 
 def escalate_overdue(deps: Deps, now: datetime | None = None) -> list[str]:
@@ -89,16 +102,24 @@ def run_once(orchestrator, deps: Deps, retry_at: dict[str, float] | None = None)
         assignments = due_assignments(session)
     outcomes = {}
     for a in assignments:
+        activity.queue(deps.sessions, a.task_id, a.author)
+    for a in assignments:
         if retry_at.get(a.thread_id, 0) > time.monotonic():
             continue
         what = f"{a.code} · {JOB_LABELS[a.job]} v{a.version} · {LABELS[a.author]}"
+        activity.report(deps.sessions, a.task_id, a.author, "prépare son travail")
         try:
             outcomes[a.thread_id] = run(orchestrator, a)
             retry_at.pop(a.thread_id, None)
+            activity.clear(deps.sessions, a.task_id)
             log.info("%s · %s", what, outcomes[a.thread_id])
         except Exception as exc:  # noqa: BLE001 : un échec n'arrête pas les autres tâches
             outcomes[a.thread_id] = "error"
-            retry_at[a.thread_id] = time.monotonic() + get_settings().orchestrator_retry_delay
+            delay = get_settings().orchestrator_retry_delay
+            retry_at[a.thread_id] = time.monotonic() + delay
+            activity.fail(
+                deps.sessions, a.task_id, describe(exc), datetime.now(UTC) + timedelta(seconds=delay)
+            )
             log.warning("%s · échec, nouvel essai plus tard : %s", what, exc)
     return outcomes
 
@@ -118,6 +139,7 @@ def main() -> None:
         checkpointer.setup()
         orchestrator = build_orchestrator(deps, checkpointer)
         retry_at: dict[str, float] = {}
+        activity.clear(deps.sessions)  # une activité restée d'un arrêt précédent n'est plus vraie
         log.info("Orchestrateur prêt (passerelle %s).", settings.litellm_url)
         while True:
             run_once(orchestrator, deps, retry_at)

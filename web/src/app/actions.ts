@@ -3,7 +3,6 @@
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { apiSend, type Project, type Task } from "@/lib/api";
-import { DEFAULT_AI_MODEL } from "@/lib/domain";
 
 // Chaque action passe par l'API, qui revérifie le jeton, le rôle et le cycle de vie.
 // Elles renvoient l'erreur à afficher plutôt que de lever.
@@ -26,7 +25,7 @@ export async function createTask(projectId: string, _: ActionState, form: FormDa
   const request = text(form, "request");
   if (!request) return { error: "Décris la demande." };
   const type = text(form, "type") || "FEATURE";
-  const ai_model = text(form, "ai_model") || DEFAULT_AI_MODEL;
+  const ai_model = text(form, "ai_model");
   // Un bug décrit en quelques mots est reformulé par une casquette, puis validé par son auteur.
   if (type === "BUGFIX") return sendBugInWords(projectId, request, ai_model);
   // Le titre reprend la première ligne ; le texte complet ouvre le fil.
@@ -36,7 +35,7 @@ export async function createTask(projectId: string, _: ActionState, form: FormDa
     type,
     title,
     description: request,
-    ai_model,
+    ...(ai_model ? { ai_model } : {}),
   });
   if (!result.ok) return { error: result.error };
   redirect(`/projets/${projectId}/taches/${result.data.code}`);
@@ -46,11 +45,15 @@ export async function createTask(projectId: string, _: ActionState, form: FormDa
 export async function reportBugInWords(projectId: string, _: ActionState, form: FormData): Promise<ActionState> {
   const description = text(form, "text");
   if (!description) return { error: "Décris le bug en quelques mots." };
-  return sendBugInWords(projectId, description, text(form, "ai_model") || DEFAULT_AI_MODEL);
+  return sendBugInWords(projectId, description, text(form, "ai_model"));
 }
 
+// Sans modèle choisi, l'API applique son modèle par défaut.
 async function sendBugInWords(projectId: string, description: string, ai_model: string): Promise<ActionState> {
-  const result = await apiSend<Task>("POST", `/projects/${projectId}/bugs/text`, { text: description, ai_model });
+  const result = await apiSend<Task>("POST", `/projects/${projectId}/bugs/text`, {
+    text: description,
+    ...(ai_model ? { ai_model } : {}),
+  });
   if (!result.ok) return { error: result.error };
   redirect(`/projets/${projectId}/taches/${result.data.code}`);
 }

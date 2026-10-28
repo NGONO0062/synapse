@@ -1,4 +1,8 @@
+import os
 from collections.abc import Iterator
+
+# Les tests ne dépendent pas du modèle par défaut réglé dans api/.env.
+os.environ["SYNAPSE_DEFAULT_AI_MODEL"] = "claude-sonnet"
 
 import pytest
 from fastapi.testclient import TestClient

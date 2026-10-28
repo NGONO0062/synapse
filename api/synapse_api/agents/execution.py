@@ -15,6 +15,7 @@ from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from synapse_api.agents import activity
 from synapse_api.agents.casquettes import LABELS, referentiel, system_prompt
 from synapse_api.agents.jobs import Assignment, PlanDraft, Review, assignment_for, branch_name
 from synapse_api.agents.sandbox import CONFIG_FILE, RunResult, Workspace
@@ -156,6 +157,7 @@ def execution_graph(deps: Deps):
 
     def setup(state: WorkState) -> WorkState:
         a = Assignment.from_state(state)
+        activity.report(deps.sessions, a.task_id, Casquette.ORCHESTRATEUR, "prépare la branche de la tâche")
         with deps.sessions() as session:
             task = session.get(Task, a.task_id)
             if task.branch is None:
@@ -177,6 +179,7 @@ def execution_graph(deps: Deps):
 
     def reproduce(state: WorkState) -> WorkState:
         a = Assignment.from_state(state)
+        activity.report(deps.sessions, a.task_id, Casquette.DEBOGUEUR, "écrit le test qui reproduit le bug")
         answer = propose(state, Casquette.DEBOGUEUR, REPRODUCE)
         if answer.question:
             return ask(state, Casquette.DEBOGUEUR, answer.question)
@@ -201,6 +204,8 @@ def execution_graph(deps: Deps):
 
     def implement(state: WorkState) -> WorkState:
         a = Assignment.from_state(state)
+        step = "écrit la documentation" if a.task_type is TaskType.DOC else "écrit le code"
+        activity.report(deps.sessions, a.task_id, a.author, step)
         answer = propose(state, a.author, IMPLEMENT[a.task_type] + ESCAPES)
         if answer.question:
             return ask(state, a.author, answer.question)
@@ -245,6 +250,7 @@ def execution_graph(deps: Deps):
 
     def code_review(state: WorkState) -> WorkState:
         a = Assignment.from_state(state)
+        activity.report(deps.sessions, a.task_id, a.reviewer, "relit le changement")
         prompt = (
             f"{state['brief']}\n\nDiff de la branche par rapport à main :\n{workspace(state).diff()[:60_000]}"
             f"\n\nRelis ce changement du {LABELS[a.author]} avec ton référentiel, au regard du plan validé. "
@@ -264,6 +270,9 @@ def execution_graph(deps: Deps):
 
     def qa(state: WorkState) -> WorkState:
         a = Assignment.from_state(state)
+        activity.report(
+            deps.sessions, a.task_id, Casquette.ANALYSTE_TEST, "lance les tests dans le bac à sable"
+        )
         ws = workspace(state)
         if a.task_type is TaskType.DOC and not ws.config().test:
             return {"feedback": [], "qa": None}
@@ -289,6 +298,7 @@ def execution_graph(deps: Deps):
 
     def submit(state: WorkState) -> WorkState:
         a = Assignment.from_state(state)
+        activity.report(deps.sessions, a.task_id, Casquette.ORCHESTRATEUR, "prépare le livrable")
         ws = workspace(state)
         with deps.sessions() as session:
             task = still_due(session, a)

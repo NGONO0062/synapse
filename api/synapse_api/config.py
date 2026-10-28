@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     # Passerelle LiteLLM (infra/litellm). Sa clé est lue par l'orchestrateur, jamais montrée aux casquettes.
     litellm_url: str = "http://localhost:4000"
     litellm_api_key: SecretStr = SecretStr("")
+    # Modèle des tâches créées sans choix explicite (bug signalé, formulaire). Un des AI_MODELS.
+    default_ai_model: str = "claude-sonnet"
     # Orchestrateur : délai entre deux tours, et avant de réessayer un travail en échec (secondes).
     orchestrator_interval: float = 5
     orchestrator_retry_delay: float = 60

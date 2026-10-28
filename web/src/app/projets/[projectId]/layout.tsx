@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import { AccountMenu, AccountMenuFallback } from "@/components/shell/AccountMenu";
 import { NavLink } from "@/components/shell/NavLink";
 import shell from "@/components/shell/shell.module.css";
+import { LogoSpinner, agentsAtWork } from "@/components/task/AgentActivity";
+import { AutoRefresh } from "@/components/ui/AutoRefresh";
 import { STATUS_COLORS } from "@/components/ui/StatusDot";
 import { TypeTag } from "@/components/ui/Tag";
 import { Logo } from "@/components/ui/Logo";
@@ -47,6 +49,7 @@ async function ProjectNav({ params }: { params: Promise<{ projectId: string }> }
 
   return (
     <>
+      <AutoRefresh active={tasks.some(agentsAtWork)} />
       <div className={styles.projectBar}>
         <details className={styles.switcher}>
           <summary aria-label={`Projet ${project.name}, changer de projet`}>
@@ -102,6 +105,15 @@ async function ProjectNav({ params }: { params: Promise<{ projectId: string }> }
                     {task.awaiting_human && <span className={styles.awaiting}>en attente</span>}
                     {task.pending_decision === "TESTER_CONFIRMATION" && <span>· à confirmer</span>}
                     {task.pending_decision === "REPORT" && <span>· reformulation</span>}
+                    {task.activity &&
+                      (task.activity.error ? (
+                        <span className={styles.awaiting}>· bloquée</span>
+                      ) : (
+                        <span className={styles.working}>
+                          <LogoSpinner small />
+                          <span className="sr-only">une casquette y travaille</span>
+                        </span>
+                      ))}
                   </span>
                 </NavLink>
               ))}

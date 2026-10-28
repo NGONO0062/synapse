@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { postMessage, runCommand } from "@/app/actions";
+import { AgentActivity, AgentPending, agentsAtWork } from "@/components/task/AgentActivity";
 import { Composer } from "@/components/task/Composer";
 import { DecisionActions } from "@/components/task/DecisionActions";
 import { DeliverableLink, DeliverablePanel, hasDeliverable } from "@/components/task/Deliverable";
@@ -74,7 +75,11 @@ async function TaskThread({
               <EventItem key={item.data.id} event={item.data} user={user} />
             ),
           )}
-          <NextStep task={task} isPO={isPO} />
+          {agentsAtWork(task) ? (
+            task.activity ? <AgentActivity activity={task.activity} /> : <AgentPending />
+          ) : (
+            <NextStep task={task} isPO={isPO} />
+          )}
         </div>
 
         <Composer

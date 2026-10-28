@@ -25,7 +25,8 @@ APPROVED = {"approved": True}
 
 class ScriptedModel:
     """Modèle factice : rejoue des réponses écrites d'avance, par format de réponse.
-    La dernière réponse d'une liste se répète ; une exception est levée telle quelle."""
+    La dernière réponse d'une liste se répète ; une exception est levée telle quelle ;
+    une fonction est appelée au moment de répondre (pour observer l'état pendant le travail)."""
 
     def __init__(self, **answers: list) -> None:
         self.answers = answers
@@ -40,6 +41,8 @@ class ScriptedModel:
         self.calls.append((schema.__name__, system, prompt))
         queue = self.answers[schema.__name__]
         answer = queue.pop(0) if len(queue) > 1 else queue[0]
+        if callable(answer):
+            answer = answer()
         if isinstance(answer, Exception):
             raise answer
         return schema.model_validate(answer)
@@ -172,7 +175,33 @@ def test_interrupted_work_resumes_where_it_stopped(clients, orchestrator):
     tick = orchestrator(model)
 
     assert list(tick().values()) == ["error"]
-    assert clients.as_(PO).get(f"/tasks/{task}").json()["plan_version"] == 0
+    stuck = clients.as_(PO).get(f"/tasks/{task}").json()
+    assert stuck["plan_version"] == 0
+    # L'échec est visible dans l'interface : qui travaillait, pourquoi ça bloque, prochain essai.
+    assert stuck["activity"]["casquette"] == "BUSINESS_ANALYST"
+    assert stuck["activity"]["error"] == "La passerelle IA (LiteLLM) ne répond pas."
+    assert stuck["activity"]["retry_at"] is not None
     assert list(tick().values()) == ["published"]
+    assert clients.as_(PO).get(f"/tasks/{task}").json()["activity"] is None
     # Le brouillon déjà écrit n'est pas refait : seule la relecture est rejouée.
     assert len(model.prompts("PlanDraft")) == 1 and len(model.prompts("Review")) == 2
+
+
+def test_the_po_sees_who_is_working_and_who_waits(clients, orchestrator):
+    project = new_project(clients)
+    first, second = new_task(clients, project)["id"], new_task(clients, project)["id"]
+    for task in (first, second):
+        command(clients, PO, task, "PRIORITIZE")
+    seen = {}
+
+    def while_drafting():
+        tasks = {t["id"]: t["activity"] for t in clients.as_(PO).get(f"/projects/{project}/tasks").json()}
+        seen.setdefault("working", tasks[first])
+        seen.setdefault("waiting", tasks[second])
+        return PLAN
+
+    orchestrator(ScriptedModel(PlanDraft=[while_drafting], Review=[APPROVED]))()
+
+    assert seen["working"]["casquette"] == "ARCHITECTE" and seen["working"]["step"] == "rédige le plan"
+    assert seen["waiting"]["step"] == "attend son tour" and seen["waiting"]["error"] is None
+    assert all(t["activity"] is None for t in clients.as_(PO).get(f"/projects/{project}/tasks").json())

@@ -55,6 +55,13 @@ Exécution d'une tâche en In progress :
 
 Il faut une clé de fournisseur dans `infra/.env` (par exemple `ANTHROPIC_API_KEY`), le conteneur `litellm` démarré, et Docker pour le bac à sable.
 
+Sans clé payante :
+- **Modèle local** (« Local (Ollama) ») : installer [Ollama](https://ollama.com), puis `ollama pull qwen2.5-coder:3b`. La passerelle le joint par `OLLAMA_API_BASE` (voir `infra/.env.example`). Gratuit, mais lent sans carte graphique et de qualité limitée : réserver aux petites demandes.
+- **Gemini** : clé gratuite sur https://aistudio.google.com/apikey, dans `GEMINI_API_KEY`.
+- Le modèle des tâches créées sans choix explicite (bugs signalés) se règle dans `api/.env` : `SYNAPSE_DEFAULT_AI_MODEL=local` (ou `gemini`). Relancer l'API après un changement.
+
+Pendant le travail des casquettes, le fil de la tâche montre qui travaille et sur quoi (logo de Synapse animé), ou pourquoi c'est bloqué (modèle injoignable, clé absente), et la page se met à jour seule.
+
 ## Simuler les agents
 
 Sans clé de fournisseur, un simulateur joue le rôle des casquettes sur une tâche, en passant par les mêmes règles du cycle de vie. Ses messages sont marqués « [Simulation] ». Ne pas le lancer pendant que le worker tourne : le worker fait déjà tout cela.

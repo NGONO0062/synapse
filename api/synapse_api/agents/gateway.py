@@ -26,6 +26,12 @@ class Model(Protocol):
 ModelFactory = Callable[[str], Model]
 
 
+# Formats de réponse structurée : l'appel d'outil, puis le schéma JSON imposé à la génération
+# (que les petits modèles locaux respectent mieux). Le format qui a marché est retenu par modèle.
+METHODS = ("function_calling", "json_schema")
+_preferred: dict[str, str] = {}
+
+
 class LiteLLMModel:
     def __init__(self, name: str) -> None:
         settings = get_settings()
@@ -33,18 +39,21 @@ class LiteLLMModel:
             raise GatewayError(
                 "Clé de la passerelle absente : renseigner SYNAPSE_LITELLM_API_KEY dans api/.env."
             )
+        self.name = name
         self._chat = ChatOpenAI(
             model=name,
             base_url=settings.litellm_url,
             api_key=settings.litellm_api_key,
-            timeout=300,
+            timeout=900,  # un modèle local sans carte graphique est lent
             max_retries=2,
         )
 
     def structured(self, schema: type[T], *, system: str, prompt: str) -> T:
-        # L'appel d'outil est le format structuré que tous les fournisseurs de la passerelle comprennent.
-        runnable = self._chat.with_structured_output(schema, method="function_calling")
-        answer = runnable.invoke([("system", system), ("human", prompt)])
-        if not isinstance(answer, schema):
-            raise GatewayError(f"Réponse inattendue du modèle : {type(answer).__name__}.")
-        return answer
+        methods = sorted(METHODS, key=lambda method: method != _preferred.get(self.name))
+        for method in methods:
+            runnable = self._chat.with_structured_output(schema, method=method)
+            answer = runnable.invoke([("system", system), ("human", prompt)])
+            if isinstance(answer, schema):
+                _preferred[self.name] = method
+                return answer
+        raise GatewayError(f"Le modèle {self.name} n'a pas rendu de réponse structurée.")
