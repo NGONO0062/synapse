@@ -77,6 +77,11 @@ export type Task = {
   status: TaskStatus;
   ai_model: string;
   bug_report: BugReport | null;
+  created_by: string; // sujet OIDC de l'auteur, seul à valider la reformulation de son bug
+  report_required: boolean; // bug écrit en langage naturel
+  report_version: number;
+  validated_report_version: number;
+  rejected_report_version: number;
   pending_decision: PendingDecision | null;
   awaiting_human: boolean;
   awaiting_reason: "QUESTION" | "PLAN_CHANGE" | "QA_LIMIT" | "TIMEOUT" | null;
@@ -94,8 +99,12 @@ export type FileChange = { path: string; additions: number; deletions: number; d
 
 export type Check = { label: string; ok: boolean; value: string };
 
+// Signalement reformulé par une casquette à partir d'un bug écrit en langage naturel.
+export type ReformulatedReport = BugReport & { title: string };
+
 export type Proposal = {
   changes: string[];
+  report: ReformulatedReport | null;
   failing_test: string | null;
   files: FileChange[];
   checks: Check[];
@@ -109,7 +118,7 @@ export type Proposal = {
 
 export type TaskMessage = {
   id: string;
-  kind: "MESSAGE" | "PLAN" | "RESULT" | "QUESTION";
+  kind: "MESSAGE" | "PLAN" | "RESULT" | "QUESTION" | "REPORT";
   author_kind: "HUMAN" | "AGENT";
   author_name: string;
   casquette: Casquette | null;

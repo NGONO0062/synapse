@@ -25,7 +25,8 @@ export default function TaskPage({ params, searchParams }: PageProps<"/projets/[
   );
 }
 
-type Ctx = { task: Task; messages: TaskMessage[]; isPO: boolean; basePath: string };
+// isAuthor : l'utilisateur a créé la tâche (lui seul valide la reformulation de son bug).
+type Ctx = { task: Task; messages: TaskMessage[]; isPO: boolean; isAuthor: boolean; basePath: string };
 
 async function TaskThread({
   params,
@@ -44,7 +45,13 @@ async function TaskThread({
   ]);
   const isPO = user.roles.includes("PO");
   const answering = isPO && (task.pending_decision === "QUESTION" || task.pending_decision === "ESCALATION");
-  const ctx: Ctx = { task, messages, isPO, basePath: `/projets/${projectId}/taches/${task.code}` };
+  const ctx: Ctx = {
+    task,
+    messages,
+    isPO,
+    isAuthor: task.created_by === user.sub,
+    basePath: `/projets/${projectId}/taches/${task.code}`,
+  };
   const opened = messages.find((m) => m.id === query.livrable && m.kind === "RESULT");
 
   return (
@@ -127,11 +134,49 @@ function AgentBlock({ message, children }: { message: TaskMessage; children?: Re
 function MessageItem({ message, ctx }: { message: TaskMessage; ctx: Ctx }) {
   const { task, isPO } = ctx;
   if (message.author_kind === "HUMAN") {
-    // Le signalement structuré d'un bug ouvre le fil (écran 5).
-    if (task.bug_report && message.id === ctx.messages[0]?.id) {
+    // Le signalement structuré d'un bug ouvre le fil (écran 5). Un bug écrit en langage
+    // naturel garde son texte d'origine ; sa reformulation validée est plus bas dans le fil.
+    if (task.bug_report && !task.report_required && message.id === ctx.messages[0]?.id) {
       return <BugReportCard report={task.bug_report} message={message} />;
     }
     return <Bubble>{message.body}</Bubble>;
+  }
+
+  if (message.kind === "REPORT") {
+    const version = message.plan_version ?? 0;
+    const pending = task.pending_decision === "REPORT" && version === task.report_version;
+    let footer: ReactNode;
+    if (pending && ctx.isAuthor) {
+      footer = (
+        <DecisionActions
+          taskId={task.id}
+          approve={{ command: "VALIDATE_REPORT", label: "Valider la reformulation" }}
+          reject={{
+            command: "REQUEST_REPORT_CHANGES",
+            label: "La corriger",
+            placeholder: "Qu’est-ce qui a été mal compris ?",
+          }}
+        />
+      );
+    } else if (pending) {
+      footer = <span className={styles.muted}>En attente de la validation de l’auteur du signalement</span>;
+    } else if (version === task.validated_report_version) {
+      footer = <Tag tone="human">✓ Reformulation validée</Tag>;
+    } else if (version <= task.rejected_report_version) {
+      footer = <Tag tone="warn">Correction demandée</Tag>;
+    } else {
+      footer = <Tag tone="neutral">Remplacée</Tag>;
+    }
+    return (
+      <AgentBlock message={message}>
+        <ProposalCard
+          title={`Reformulation · version ${version}`}
+          createdAt={message.created_at}
+          proposal={message.payload}
+          footer={footer}
+        />
+      </AgentBlock>
+    );
   }
 
   if (message.kind === "PLAN") {
@@ -278,6 +323,7 @@ function BugReportCard({ report, message }: { report: BugReport; message: TaskMe
 }
 
 const EVENT_TEXT: Record<string, string> = {
+  VALIDATE_REPORT: "a validé la reformulation",
   PRIORITIZE: "a priorisé la demande",
   VALIDATE_PLAN: "a validé le plan",
   VALIDATE_RESULT: "a validé le résultat",
@@ -285,6 +331,7 @@ const EVENT_TEXT: Record<string, string> = {
 };
 
 const EVENT_CAPTIONS: Record<string, string> = {
+  REQUEST_REPORT_CHANGES: "Correction de la reformulation",
   REQUEST_PLAN_CHANGES: "Modifications du plan demandées",
   REJECT_RESULT: "Résultat refusé",
   ANSWER_HUMAN: "Réponse",
@@ -314,6 +361,16 @@ const ESCALATIONS: Record<string, string> = {
 
 // Ce qui doit se passer ensuite, quand aucune carte ne le dit déjà.
 function NextStep({ task, isPO }: { task: Task; isPO: boolean }) {
+  if (task.status === "BACKLOG" && task.report_required && task.validated_report_version === 0) {
+    // La carte de reformulation dit déjà ce qui est attendu quand elle est en attente.
+    if (task.pending_decision === "REPORT") return null;
+    const step = task.report_version > 0 ? "La casquette corrige sa reformulation." : "Une casquette reformule ce signalement.";
+    return (
+      <p className={styles.muted}>
+        {step} Le bug pourra être priorisé une fois la reformulation validée par son auteur.
+      </p>
+    );
+  }
   if (task.status === "BACKLOG") {
     return (
       <div className={styles.next}>

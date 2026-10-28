@@ -41,7 +41,8 @@ async function ProjectHome({ params }: { params: Promise<{ projectId: string }> 
         {project.description && <p className={styles.description}>{project.description}</p>}
         <p className={styles.hint}>
           Décris une demande : l’orchestrateur choisit la casquette, et rien n’avance sans ta validation.
-          Pour un bug détaillé, utilise le <Link href={`/projets/${projectId}/bugs/nouveau`}>formulaire de signalement</Link>.
+          Un bugfix décrit ici est reformulé par une casquette, et tu valides la reformulation. Pour un bug
+          détaillé, utilise le <Link href={`/projets/${projectId}/bugs/nouveau`}>formulaire de signalement</Link>.
         </p>
       </div>
       <Composer

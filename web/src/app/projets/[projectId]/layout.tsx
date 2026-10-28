@@ -101,6 +101,7 @@ async function ProjectNav({ params }: { params: Promise<{ projectId: string }> }
                     <code>{task.code}</code>
                     {task.awaiting_human && <span className={styles.awaiting}>en attente</span>}
                     {task.pending_decision === "TESTER_CONFIRMATION" && <span>· à confirmer</span>}
+                    {task.pending_decision === "REPORT" && <span>· reformulation</span>}
                   </span>
                 </NavLink>
               ))}

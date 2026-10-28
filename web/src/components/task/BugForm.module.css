@@ -1,3 +1,32 @@
+/* Bascule « En quelques mots » / « Formulaire détaillé » (comme l'écran 3) */
+.tabs {
+  align-self: flex-start;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--sy-border);
+  border-radius: var(--sy-radius-pill);
+  background: var(--sy-surface);
+}
+
+.tabs button {
+  min-height: var(--sy-touch);
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--sy-radius-pill);
+  background: transparent;
+  color: var(--sy-text-muted);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tabs button[aria-selected="true"] {
+  background: var(--sy-text);
+  color: var(--sy-sidebar);
+}
+
 .form {
   display: flex;
   flex-direction: column;
@@ -95,6 +124,11 @@
 
 .choice input {
   accent-color: var(--sy-ai);
+}
+
+.help {
+  color: var(--sy-text-muted);
+  font-size: 13px;
 }
 
 .drop {

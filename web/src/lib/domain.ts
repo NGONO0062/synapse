@@ -67,9 +67,10 @@ export function taskCode(type: TaskType, number: number): string {
   return `${TYPE_PREFIXES[type]}-${String(number).padStart(3, "0")}`;
 }
 
-export type PendingDecision = "PLAN" | "QUESTION" | "ESCALATION" | "RESULT" | "TESTER_CONFIRMATION";
+export type PendingDecision = "REPORT" | "PLAN" | "QUESTION" | "ESCALATION" | "RESULT" | "TESTER_CONFIRMATION";
 
 export const DECISION_LABELS: Record<PendingDecision, string> = {
+  REPORT: "Reformulation",
   PLAN: "Plan",
   QUESTION: "Question",
   ESCALATION: "À trancher",

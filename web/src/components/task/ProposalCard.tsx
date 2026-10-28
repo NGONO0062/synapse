@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import type { Proposal } from "@/lib/api";
+import type { Proposal, ReformulatedReport } from "@/lib/api";
+import { ENVIRONMENT_LABELS, SEVERITY_LABELS } from "@/lib/domain";
 import { relativeTime } from "@/lib/format";
 import styles from "./ProposalCard.module.css";
 
@@ -10,7 +11,7 @@ type Props = {
   footer?: ReactNode; // boutons de décision ou état de la proposition
 };
 
-// Carte de proposition (plan ou résultat). Elle montre aussi ce dont l'agent n'est pas sûr,
+// Carte de proposition (reformulation d'un bug, plan ou résultat). Elle montre aussi ce dont l'agent n'est pas sûr,
 // ce qu'il a supposé et ce qu'il n'a pas pu vérifier (dossier, section 1).
 export function ProposalCard({ title, createdAt, proposal, footer }: Props) {
   const p = proposal;
@@ -22,6 +23,7 @@ export function ProposalCard({ title, createdAt, proposal, footer }: Props) {
       </header>
       {p && (
         <div className={styles.body}>
+          {p.report && <ReportFields report={p.report} />}
           {p.changes.length > 0 && (
             <Section label="Ce qui change">
               {p.changes.map((c) => (
@@ -68,5 +70,27 @@ function Doubts({ label, items }: { label: string; items: string[] }) {
         </span>
       ))}
     </Section>
+  );
+}
+
+function ReportFields({ report }: { report: ReformulatedReport }) {
+  const rows = [
+    ["Titre", report.title],
+    ["Environnement", ENVIRONMENT_LABELS[report.environment]],
+    ["Navigateur / appareil", report.device || "Non précisé"],
+    ["Gravité", SEVERITY_LABELS[report.severity]],
+    ["Étapes pour reproduire", report.steps],
+    ["Résultat attendu", report.expected],
+    ["Résultat obtenu", report.actual],
+  ];
+  return (
+    <dl className={styles.report}>
+      {rows.map(([label, value]) => (
+        <div key={label} className={styles.section}>
+          <dt className={styles.label}>{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }

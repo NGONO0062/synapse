@@ -34,6 +34,7 @@ Les casquettes arrivent au lot 3. D'ici là, un simulateur joue leur rôle sur u
 
 ```bash
 cd api
+.venv/Scripts/python -m synapse_api.dev.simulate BUG-001 report       # reformule un bug écrit en langage naturel (Backlog)
 .venv/Scripts/python -m synapse_api.dev.simulate FEAT-001 plan        # propose un plan (tâche en To do)
 .venv/Scripts/python -m synapse_api.dev.simulate FEAT-001 question    # pose une question (In progress)
 .venv/Scripts/python -m synapse_api.dev.simulate FEAT-001 qa-failure  # échec QA (3 échecs : remontée au PO)
@@ -42,6 +43,8 @@ cd api
 ```
 
 Parcours type : créer une demande → Prioriser → `plan` → Valider le plan → `result` → Valider le résultat.
+
+Un bug peut être signalé en quelques mots (mode par défaut de l'écran de signalement, ou Bugfix tapé par le PO dans la barre de saisie). Il reste au Backlog jusqu'à ce que son auteur valide la reformulation. Parcours : le testeur décrit le bug → `report` → le testeur valide la reformulation, ou la fait corriger avec un commentaire puis `report` à nouveau → le PO priorise → suite du parcours Bugfix.
 
 Pour un Bugfix, le plan porte le test qui reproduit le bug, et le résultat ouvre un livrable (diff et contrôles) dans le panneau droit. Parcours : le testeur signale le bug (formulaire du projet) → le PO priorise → `plan` → Valider le plan → `result` → le PO valide dans le panneau → le testeur confirme la correction.
 
@@ -60,4 +63,5 @@ cd web && npm run typecheck && npm run lint && npm run build
 | 1 · Identité | Thème de connexion Keycloak, connexion OIDC (BFF, PKCE), session chiffrée, renouvellement des jetons, garde des routes, déconnexion, accueil appelant l'API | Fait |
 | 2a · Projets et tâches | Accueil (décisions en attente, projets), nouveau projet, barre latérale par statut, fil de tâche (plans, résultats, questions, décisions), barre de saisie, simulateur d'agent | Fait |
 | 2b · Bugfix et testeur | Signalement structuré d'un bug (écran du testeur), test qui reproduit le bug dans le plan, panneau du livrable (diff, contrôles) avec la décision, confirmation du testeur | Fait |
+| 2c · Bug en langage naturel | Signalement en quelques mots (mode par défaut), reformulation par une casquette, validation ou correction par l'auteur avant la priorisation | Fait |
 | 3 · Orchestration | LangGraph, sous-graphes par casquette, passerelle LiteLLM, bac à sable | À faire |

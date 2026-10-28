@@ -104,9 +104,11 @@ class TaskOut(BaseModel):
     status: TaskStatus
     ai_model: str
     bug_report: BugReport | None
+    created_by: str  # sujet OIDC de l'auteur : lui seul valide la reformulation de son bug
     report_required: bool
     report_version: int
     validated_report_version: int
+    rejected_report_version: int
     pending_decision: PendingDecision | None
     awaiting_human: bool
     awaiting_reason: AwaitingReason | None

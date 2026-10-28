@@ -25,20 +25,37 @@ export async function createProject(_: ActionState, form: FormData): Promise<Act
 export async function createTask(projectId: string, _: ActionState, form: FormData): Promise<ActionState> {
   const request = text(form, "request");
   if (!request) return { error: "Décris la demande." };
+  const type = text(form, "type") || "FEATURE";
+  const ai_model = text(form, "ai_model") || DEFAULT_AI_MODEL;
+  // Un bug décrit en quelques mots est reformulé par une casquette, puis validé par son auteur.
+  if (type === "BUGFIX") return sendBugInWords(projectId, request, ai_model);
   // Le titre reprend la première ligne ; le texte complet ouvre le fil.
   const firstLine = request.split("\n")[0];
   const title = firstLine.length > 120 ? `${firstLine.slice(0, 117)}…` : firstLine;
   const result = await apiSend<Task>("POST", `/projects/${projectId}/tasks`, {
-    type: text(form, "type") || "FEATURE",
+    type,
     title,
     description: request,
-    ai_model: text(form, "ai_model") || DEFAULT_AI_MODEL,
+    ai_model,
   });
   if (!result.ok) return { error: result.error };
   redirect(`/projets/${projectId}/taches/${result.data.code}`);
 }
 
-/** Écran 6 : signalement structuré d'un bug. */
+/** Écran 6 : bug décrit en langage naturel (mode par défaut). */
+export async function reportBugInWords(projectId: string, _: ActionState, form: FormData): Promise<ActionState> {
+  const description = text(form, "text");
+  if (!description) return { error: "Décris le bug en quelques mots." };
+  return sendBugInWords(projectId, description, text(form, "ai_model") || DEFAULT_AI_MODEL);
+}
+
+async function sendBugInWords(projectId: string, description: string, ai_model: string): Promise<ActionState> {
+  const result = await apiSend<Task>("POST", `/projects/${projectId}/bugs/text`, { text: description, ai_model });
+  if (!result.ok) return { error: result.error };
+  redirect(`/projets/${projectId}/taches/${result.data.code}`);
+}
+
+/** Écran 6 : signalement structuré d'un bug (formulaire détaillé). */
 export async function reportBug(projectId: string, _: ActionState, form: FormData): Promise<ActionState> {
   const fields = ["title", "steps", "expected", "actual"] as const;
   if (fields.some((f) => !text(form, f))) {

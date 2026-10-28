@@ -246,6 +246,7 @@ def test_tester_describes_a_bug_in_natural_language(clients):
     bug = free_text_bug(clients, project)
     assert bug["code"] == "BUG-001" and bug["status"] == "BACKLOG"
     assert bug["report_required"] and bug["bug_report"] is None
+    assert bug["created_by"] == TESTEUR.subject
     assert bug["title"].startswith("Quand je saisis 2 h le samedi") and len(bug["title"]) <= 80
     [opening] = clients.as_(TESTEUR).get(f"/tasks/{bug['id']}/messages").json()
     assert opening["body"] == TEXT
@@ -273,6 +274,7 @@ def test_author_validates_the_reformulation_before_prioritization(clients, sessi
 
     res = command(clients, TESTEUR, bug, "REQUEST_REPORT_CHANGES", "C'est sur Firefox, pas Chrome.")
     assert res.status_code == 200 and res.json()["pending_decision"] is None
+    assert res.json()["rejected_report_version"] == 1
     reformulate(session_factory, bug, title="Total hebdomadaire sans le samedi (Firefox)", device="Firefox")
     messages = clients.as_(TESTEUR).get(f"/tasks/{bug}/messages").json()
     [proposal_v2] = [m for m in messages if m["plan_version"] == 2]
