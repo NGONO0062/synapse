@@ -20,7 +20,7 @@ from synapse_api.db.models import Project, Task
 from synapse_api.db.session import _session_factory
 from synapse_api.domain.enums import Casquette, MessageKind, TaskType
 from synapse_api.domain.lifecycle import Actor, Command, LifecycleError
-from synapse_api.services import add_message, execute, propose_report
+from synapse_api.services import add_message, execute, propose_plan, propose_report
 
 PLANNERS = {
     TaskType.FEATURE: Casquette.ARCHITECTE,
@@ -83,15 +83,11 @@ def report(session: Session, task: Task) -> None:
 
 
 def plan(session: Session, task: Task) -> None:
-    actor = Actor.agent(PLANNERS[task.type])
-    execute(session, task, Command.PROPOSE_PLAN, actor, ai_model=task.ai_model)
-    add_message(
+    propose_plan(
         session,
         task,
-        kind=MessageKind.PLAN,
-        author=actor,
+        Actor.agent(PLANNERS[task.type]),
         ai_model=task.ai_model,
-        plan_version=task.plan_version,
         body=TAG + "Voici le plan. Rien ne sera fait tant que tu ne l’as pas validé.",
         payload={
             "changes": [

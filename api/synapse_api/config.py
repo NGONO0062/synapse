@@ -1,5 +1,6 @@
 from functools import lru_cache
 
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,6 +14,13 @@ class Settings(BaseSettings):
     oidc_audience: str = "synapse-api"
 
     cors_origins: list[str] = ["http://localhost:3200"]
+
+    # Passerelle LiteLLM (infra/litellm). Sa clé est lue par l'orchestrateur, jamais montrée aux casquettes.
+    litellm_url: str = "http://localhost:4000"
+    litellm_api_key: SecretStr = SecretStr("")
+    # Orchestrateur : délai entre deux tours, et avant de réessayer un travail en échec (secondes).
+    orchestrator_interval: float = 5
+    orchestrator_retry_delay: float = 60
 
     @property
     def oidc_jwks_url(self) -> str:

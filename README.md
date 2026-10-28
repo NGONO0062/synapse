@@ -14,8 +14,10 @@ docker compose -f infra/docker-compose.yml up -d
 cd api
 python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"   # .venv/bin/pip sous Linux/macOS
 echo "SYNAPSE_DATABASE_URL=postgresql+psycopg://synapse:<POSTGRES_PASSWORD>@localhost:5432/synapse" > .env
+echo "SYNAPSE_LITELLM_API_KEY=<LITELLM_MASTER_KEY>" >> .env   # clé de la passerelle, celle de infra/.env
 .venv/Scripts/alembic upgrade head
 .venv/Scripts/uvicorn synapse_api.main:app --reload      # http://localhost:8000/docs
+.venv/Scripts/python -m synapse_api.agents.worker        # orchestrateur : les casquettes (autre terminal)
 
 # 3. Front
 cd web
@@ -28,9 +30,24 @@ Keycloak (http://localhost:8080) importe le royaume `synapse` : rôles `PO`, `TE
 
 Ouvrir http://localhost:3200 : sans session, on arrive sur la connexion Keycloak, puis sur l'accueil.
 
-## Simuler les agents (en attendant l'orchestrateur)
+## Orchestrateur et casquettes
 
-Les casquettes arrivent au lot 3. D'ici là, un simulateur joue leur rôle sur une tâche, en passant par les mêmes règles du cycle de vie. Ses messages sont marqués « [Simulation] ».
+Le worker (`python -m synapse_api.agents.worker`, `--once` pour un seul tour) lit le cycle de vie et fait travailler la bonne casquette, par la passerelle LiteLLM, avec le modèle choisi sur la tâche :
+
+| Ce qui est dû | Rédige | Relit avant l'humain |
+| --- | --- | --- |
+| Reformuler un bug écrit en langage naturel | Débogueur | Analyste de test |
+| Plan d'une Feature | Architecte | Business Analyst |
+| Plan d'un Bugfix (test en échec d'abord) | Débogueur | Reviewer de code |
+| Plan d'une Doc | Rédacteur technique | Business Analyst |
+
+Chaque casquette charge son référentiel (`api/synapse_api/agents/referentiels/`), dont la version est journalisée avec la proposition, vérifie sa définition de « terminé », puis se fait relire. Après 3 brouillons, la proposition part quand même, avec les points non résolus en avertissement. L'état des graphes LangGraph est sauvegardé dans Postgres : un travail interrompu reprend là où il s'est arrêté.
+
+Il faut une clé de fournisseur dans `infra/.env` (par exemple `ANTHROPIC_API_KEY`) et le conteneur `litellm` démarré.
+
+## Simuler les agents
+
+Sans clé de fournisseur, ou pour l'exécution (lot 3b), un simulateur joue le rôle des casquettes sur une tâche, en passant par les mêmes règles du cycle de vie. Ses messages sont marqués « [Simulation] ». Ne pas le lancer pour `report` ou `plan` pendant que le worker tourne : le worker les fait déjà.
 
 ```bash
 cd api
@@ -64,4 +81,6 @@ cd web && npm run typecheck && npm run lint && npm run build
 | 2a · Projets et tâches | Accueil (décisions en attente, projets), nouveau projet, barre latérale par statut, fil de tâche (plans, résultats, questions, décisions), barre de saisie, simulateur d'agent | Fait |
 | 2b · Bugfix et testeur | Signalement structuré d'un bug (écran du testeur), test qui reproduit le bug dans le plan, panneau du livrable (diff, contrôles) avec la décision, confirmation du testeur | Fait |
 | 2c · Bug en langage naturel | Signalement en quelques mots (mode par défaut), reformulation par une casquette, validation ou correction par l'auteur avant la priorisation | Fait |
-| 3 · Orchestration | LangGraph, sous-graphes par casquette, passerelle LiteLLM, bac à sable | À faire |
+| 3a · Orchestrateur | Worker LangGraph (état dans Postgres), passerelle LiteLLM, un sous-graphe par casquette, référentiels versionnés, définition de « terminé », relecture par une autre casquette ; reformulation des bugs et plans | Fait |
+| 3b · Exécution | Bac à sable (un conteneur par tâche), dépôt Git, Développeur, Reviewer, QA, livrable réel | À faire |
+| 3c · Traçabilité et coûts | Consommation par projet et par modèle, cas de référence rejoués | À faire |

@@ -144,13 +144,21 @@ def propose_report(
     body: str,
     payload: dict,
     ai_model: str | None = None,
+    referentiel_version: str | None = None,
 ) -> TaskMessage:
     """Une casquette reformule un bug écrit en langage naturel. Lève ValueError si la
     reformulation est incomplète, LifecycleError si elle n'est pas attendue."""
     proposal = ProposalPayload.model_validate(payload)
     if proposal.report is None:
         raise ValueError("Une reformulation porte un signalement.")
-    execute(session, task, Command.PROPOSE_REPORT, actor, ai_model=ai_model)
+    execute(
+        session,
+        task,
+        Command.PROPOSE_REPORT,
+        actor,
+        ai_model=ai_model,
+        referentiel_version=referentiel_version,
+    )
     return add_message(
         session,
         task,
@@ -158,6 +166,41 @@ def propose_report(
         author=actor,
         ai_model=ai_model,
         plan_version=task.report_version,
+        body=body,
+        payload=proposal.model_dump(),
+    )
+
+
+def propose_plan(
+    session: Session,
+    task: Task,
+    actor: Actor,
+    *,
+    body: str,
+    payload: dict,
+    ai_model: str | None = None,
+    referentiel_version: str | None = None,
+) -> TaskMessage:
+    """Une casquette propose un plan, à valider avant toute exécution. Lève ValueError si
+    le plan est vide, LifecycleError s'il n'est pas attendu."""
+    proposal = ProposalPayload.model_validate(payload)
+    if not proposal.changes:
+        raise ValueError("Un plan dit ce qui change.")
+    execute(
+        session,
+        task,
+        Command.PROPOSE_PLAN,
+        actor,
+        ai_model=ai_model,
+        referentiel_version=referentiel_version,
+    )
+    return add_message(
+        session,
+        task,
+        kind=MessageKind.PLAN,
+        author=actor,
+        ai_model=ai_model,
+        plan_version=task.plan_version,
         body=body,
         payload=proposal.model_dump(),
     )

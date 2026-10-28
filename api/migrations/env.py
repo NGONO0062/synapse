@@ -14,12 +14,19 @@ config.set_main_option("sqlalchemy.url", get_settings().database_url.replace("%"
 target_metadata = Base.metadata
 
 
+def include_object(obj, name, type_, reflected, compare_to) -> bool:
+    # Les tables absentes des modèles (checkpoints LangGraph, créés par l'orchestrateur)
+    # ne sont pas gérées par Alembic : ne jamais proposer de les supprimer.
+    return not (type_ == "table" and reflected and compare_to is None)
+
+
 def run_migrations_offline() -> None:
     context.configure(
         url=config.get_main_option("sqlalchemy.url"),
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        include_object=include_object,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -32,7 +39,9 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection, target_metadata=target_metadata, include_object=include_object
+        )
         with context.begin_transaction():
             context.run_migrations()
 

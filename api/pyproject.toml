@@ -11,6 +11,9 @@ dependencies = [
     "alembic>=1.14",
     "pydantic-settings>=2.6",
     "pyjwt[crypto]>=2.10",
+    "langgraph>=1.2",
+    "langgraph-checkpoint-postgres>=3.0",
+    "langchain-openai>=1.7",
 ]
 
 [project.optional-dependencies]
@@ -26,6 +29,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["synapse_api*"]
+
+[tool.setuptools.package-data]
+"synapse_api.agents" = ["referentiels/*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
