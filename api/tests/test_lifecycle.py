@@ -194,3 +194,71 @@ class TestPendingDecision:
         state = run(state, (Command.VALIDATE_RESULT, PO))
         assert pending_decision(state) is PendingDecision.TESTER_CONFIRMATION
         assert pending_decision(run(state, (Command.CONFIRM_FIX, TESTEUR))) is None
+
+
+DEBUG = Actor.agent(Casquette.DEBOGUEUR)
+
+
+def free_text_bug() -> TaskState:
+    return TaskState(TaskType.BUGFIX, report_required=True)
+
+
+class TestNaturalLanguageBug:
+    def test_reformulation_waits_for_its_author(self):
+        state = run(free_text_bug(), (Command.PROPOSE_REPORT, DEBUG))
+        assert state.report_version == 1
+        assert pending_decision(state) is PendingDecision.REPORT
+
+    def test_bug_cannot_be_prioritized_before_its_report_is_validated(self):
+        expect_error("report_not_validated", free_text_bug(), Command.PRIORITIZE, PO)
+        state = run(free_text_bug(), (Command.PROPOSE_REPORT, DEBUG))
+        expect_error("report_not_validated", state, Command.PRIORITIZE, PO)
+
+    def test_validated_report_unlocks_prioritization(self):
+        state = run(
+            free_text_bug(),
+            (Command.PROPOSE_REPORT, DEBUG),
+            (Command.VALIDATE_REPORT, TESTEUR),
+            (Command.PRIORITIZE, PO),
+        )
+        assert state.status is TaskStatus.TODO
+        assert state.validated_report_version == 1
+
+    def test_author_can_have_the_reformulation_corrected(self):
+        state = run(
+            free_text_bug(), (Command.PROPOSE_REPORT, DEBUG), (Command.REQUEST_REPORT_CHANGES, TESTEUR)
+        )
+        assert pending_decision(state) is None
+        expect_error("no_pending_report", state, Command.VALIDATE_REPORT, TESTEUR)
+        state = run(state, (Command.PROPOSE_REPORT, DEBUG), (Command.VALIDATE_REPORT, TESTEUR))
+        assert state.validated_report_version == 2
+
+    def test_correction_requires_a_comment(self):
+        state = run(free_text_bug(), (Command.PROPOSE_REPORT, DEBUG))
+        expect_error("comment_required", state, Command.REQUEST_REPORT_CHANGES, TESTEUR, comment=" ")
+
+    def test_po_can_validate_the_report_of_a_bug_they_wrote(self):
+        state = run(free_text_bug(), (Command.PROPOSE_REPORT, DEBUG), (Command.VALIDATE_REPORT, PO))
+        assert state.validated_report_version == 1
+
+    def test_only_humans_validate_a_report(self):
+        state = run(free_text_bug(), (Command.PROPOSE_REPORT, DEBUG))
+        expect_error("human_only", state, Command.VALIDATE_REPORT, DEBUG)
+        expect_error("forbidden", state, Command.VALIDATE_REPORT, ADMIN)
+
+    def test_structured_bug_needs_no_reformulation(self):
+        expect_error("no_report_needed", TaskState(TaskType.BUGFIX), Command.PROPOSE_REPORT, DEBUG)
+        assert run(TaskState(TaskType.BUGFIX), (Command.PRIORITIZE, PO)).status is TaskStatus.TODO
+
+    def test_validated_report_is_final(self):
+        state = run(free_text_bug(), (Command.PROPOSE_REPORT, DEBUG), (Command.VALIDATE_REPORT, TESTEUR))
+        expect_error("report_validated", state, Command.PROPOSE_REPORT, DEBUG)
+
+    def test_reformulation_happens_in_backlog(self):
+        state = run(
+            free_text_bug(),
+            (Command.PROPOSE_REPORT, DEBUG),
+            (Command.VALIDATE_REPORT, TESTEUR),
+            (Command.PRIORITIZE, PO),
+        )
+        expect_error("invalid_status", state, Command.PROPOSE_REPORT, DEBUG)

@@ -49,6 +49,7 @@ class MessageKind(StrEnum):
     PLAN = "PLAN"  # plan proposé, à valider avant exécution
     RESULT = "RESULT"  # livrable proposé, à valider en Review
     QUESTION = "QUESTION"  # question d'un agent, la tâche attend une réponse
+    REPORT = "REPORT"  # reformulation d'un bug écrit en langage naturel, à valider par son auteur
 
 
 # Modèles exposés par la passerelle (infra/litellm/config.yaml).

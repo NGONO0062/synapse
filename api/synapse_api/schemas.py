@@ -70,6 +70,28 @@ class BugIn(BugReport):
     _check_model = field_validator("ai_model")(known_model)
 
 
+class BugTextIn(BaseModel):
+    """Bug décrit en langage naturel : une casquette le reformule, son auteur valide."""
+
+    text: str = Field(max_length=20_000)
+    ai_model: str = DEFAULT_AI_MODEL
+
+    _check_model = field_validator("ai_model")(known_model)
+
+    @field_validator("text")
+    @classmethod
+    def not_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Décris le bug.")
+        return value.strip()
+
+
+class ReformulatedReport(BugReport):
+    """Signalement proposé par une casquette à partir du texte de l'auteur."""
+
+    title: str = Field(min_length=1, max_length=300)
+
+
 class TaskOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -82,6 +104,9 @@ class TaskOut(BaseModel):
     status: TaskStatus
     ai_model: str
     bug_report: BugReport | None
+    report_required: bool
+    report_version: int
+    validated_report_version: int
     pending_decision: PendingDecision | None
     awaiting_human: bool
     awaiting_reason: AwaitingReason | None
@@ -135,6 +160,7 @@ class ProposalPayload(BaseModel):
     Un résultat peut porter un livrable consultable dans le panneau droit."""
 
     changes: list[str] = []
+    report: ReformulatedReport | None = None  # reformulation d'un bug (message REPORT)
     failing_test: str | None = None  # Bugfix : le test qui reproduit le bug
     files: list[FileChange] = []
     checks: list[Check] = []

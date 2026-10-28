@@ -3,7 +3,8 @@
 Module pur : aucune dépendance à la base ni au web. Chaque commande prend un état,
 un acteur et renvoie le nouvel état, ou lève `LifecycleError`. Les règles :
 
-- BACKLOG → TODO : le PO priorise.
+- BACKLOG → TODO : le PO priorise. Un bug écrit en langage naturel doit d'abord voir sa
+  reformulation validée par son auteur.
 - TODO → IN_PROGRESS : le PO valide le plan proposé par un agent.
 - IN_PROGRESS → REVIEW : l'orchestrateur soumet un livrable contrôlé.
 - REVIEW → DONE : le PO valide le résultat ; pour un Bugfix, le testeur confirme aussi.
@@ -52,6 +53,9 @@ class AwaitingReason(StrEnum):
 
 
 class Command(StrEnum):
+    PROPOSE_REPORT = "PROPOSE_REPORT"
+    REQUEST_REPORT_CHANGES = "REQUEST_REPORT_CHANGES"
+    VALIDATE_REPORT = "VALIDATE_REPORT"
     PRIORITIZE = "PRIORITIZE"
     PROPOSE_PLAN = "PROPOSE_PLAN"
     REQUEST_PLAN_CHANGES = "REQUEST_PLAN_CHANGES"
@@ -66,18 +70,25 @@ class Command(StrEnum):
     REJECT_RESULT = "REJECT_RESULT"
 
 
-HUMAN_COMMANDS: dict[Command, Role] = {
-    Command.PRIORITIZE: Role.PO,
-    Command.REQUEST_PLAN_CHANGES: Role.PO,
-    Command.VALIDATE_PLAN: Role.PO,
-    Command.ANSWER_HUMAN: Role.PO,
-    Command.VALIDATE_RESULT: Role.PO,
-    Command.REJECT_RESULT: Role.PO,
-    Command.CONFIRM_FIX: Role.TESTEUR,
+_PO = frozenset({Role.PO})
+# L'auteur d'un bug, PO ou testeur, valide sa reformulation (l'API vérifie qu'il en est l'auteur).
+_REPORTER = frozenset({Role.PO, Role.TESTEUR})
+
+HUMAN_COMMANDS: dict[Command, frozenset[Role]] = {
+    Command.REQUEST_REPORT_CHANGES: _REPORTER,
+    Command.VALIDATE_REPORT: _REPORTER,
+    Command.PRIORITIZE: _PO,
+    Command.REQUEST_PLAN_CHANGES: _PO,
+    Command.VALIDATE_PLAN: _PO,
+    Command.ANSWER_HUMAN: _PO,
+    Command.VALIDATE_RESULT: _PO,
+    Command.REJECT_RESULT: _PO,
+    Command.CONFIRM_FIX: frozenset({Role.TESTEUR}),
 }
 
 # Commandes d'agent réservées à une casquette ; les autres sont ouvertes à toutes.
 AGENT_COMMANDS: dict[Command, Casquette | None] = {
+    Command.PROPOSE_REPORT: None,
     Command.PROPOSE_PLAN: None,
     Command.ASK_HUMAN: None,
     Command.RECORD_QA_FAILURE: None,
@@ -86,6 +97,7 @@ AGENT_COMMANDS: dict[Command, Casquette | None] = {
 }
 
 COMMENT_REQUIRED = {
+    Command.REQUEST_REPORT_CHANGES,
     Command.REQUEST_PLAN_CHANGES,
     Command.ASK_HUMAN,
     Command.ANSWER_HUMAN,
@@ -104,6 +116,11 @@ class LifecycleError(Exception):
 class TaskState:
     type: TaskType
     status: TaskStatus = TaskStatus.BACKLOG
+    # Bug écrit en langage naturel : sa reformulation doit être validée avant la priorisation.
+    report_required: bool = False
+    report_version: int = 0  # dernière reformulation proposée
+    validated_report_version: int = 0
+    rejected_report_version: int = 0
     plan_version: int = 0  # dernière version proposée ; 0 = aucun plan
     validated_plan_version: int = 0
     rejected_plan_version: int = 0
@@ -117,6 +134,14 @@ class TaskState:
     @property
     def has_pending_plan(self) -> bool:
         return self.plan_version > max(self.validated_plan_version, self.rejected_plan_version)
+
+    @property
+    def has_pending_report(self) -> bool:
+        return self.report_version > max(self.validated_report_version, self.rejected_report_version)
+
+    @property
+    def report_ready(self) -> bool:
+        return not self.report_required or self.validated_report_version > 0
 
 
 def apply(
@@ -138,6 +163,7 @@ def apply(
 class PendingDecision(StrEnum):
     """Ce que la tâche attend d'un humain (accueil : « En attente de ta validation »)."""
 
+    REPORT = "REPORT"  # l'auteur d'un bug valide ou fait corriger sa reformulation
     PLAN = "PLAN"  # le PO valide ou fait modifier un plan
     QUESTION = "QUESTION"  # le PO répond à un agent
     ESCALATION = "ESCALATION"  # limite QA ou durée atteinte, le PO tranche
@@ -146,6 +172,8 @@ class PendingDecision(StrEnum):
 
 
 def pending_decision(state: TaskState) -> PendingDecision | None:
+    if state.status is TaskStatus.BACKLOG and state.has_pending_report:
+        return PendingDecision.REPORT
     if state.status is TaskStatus.TODO and state.has_pending_plan:
         return PendingDecision.PLAN
     if state.status is TaskStatus.IN_PROGRESS and state.awaiting_human:
@@ -174,8 +202,9 @@ def _check_actor(command: Command, actor: Actor) -> None:
     if command in HUMAN_COMMANDS:
         if actor.kind is not ActorKind.HUMAN:
             raise LifecycleError("human_only", "Cette décision revient à un humain.")
-        if HUMAN_COMMANDS[command] not in actor.roles:
-            raise LifecycleError("forbidden", f"Rôle {HUMAN_COMMANDS[command]} requis.")
+        allowed = HUMAN_COMMANDS[command]
+        if not allowed & actor.roles:
+            raise LifecycleError("forbidden", f"Rôle {' ou '.join(sorted(allowed))} requis.")
         return
     if actor.kind is not ActorKind.AGENT:
         raise LifecycleError("agent_only", "Cette action est réservée aux agents.")
@@ -206,8 +235,37 @@ def _resume(state: TaskState, now: datetime) -> TaskState:
     return replace(state, awaiting_human=False, awaiting_reason=None, execution_started_at=now)
 
 
+def _propose_report(state: TaskState, now: datetime) -> TaskState:
+    _require(state, TaskStatus.BACKLOG)
+    if not state.report_required:
+        raise LifecycleError("no_report_needed", "Ce bug a été signalé par le formulaire détaillé.")
+    if state.validated_report_version:
+        raise LifecycleError("report_validated", "Le signalement est déjà validé.")
+    return replace(state, report_version=state.report_version + 1)
+
+
+def _require_pending_report(state: TaskState) -> None:
+    _require(state, TaskStatus.BACKLOG)
+    if not state.has_pending_report:
+        raise LifecycleError("no_pending_report", "Aucune reformulation à valider.")
+
+
+def _request_report_changes(state: TaskState, now: datetime) -> TaskState:
+    _require_pending_report(state)
+    return replace(state, rejected_report_version=state.report_version)
+
+
+def _validate_report(state: TaskState, now: datetime) -> TaskState:
+    _require_pending_report(state)
+    return replace(state, validated_report_version=state.report_version)
+
+
 def _prioritize(state: TaskState, now: datetime) -> TaskState:
     _require(state, TaskStatus.BACKLOG)
+    if not state.report_ready:
+        raise LifecycleError(
+            "report_not_validated", "Le signalement doit d'abord être validé par son auteur."
+        )
     return replace(state, status=TaskStatus.TODO)
 
 
@@ -316,6 +374,9 @@ def _reject_result(state: TaskState, now: datetime) -> TaskState:
 
 
 _HANDLERS = {
+    Command.PROPOSE_REPORT: _propose_report,
+    Command.REQUEST_REPORT_CHANGES: _request_report_changes,
+    Command.VALIDATE_REPORT: _validate_report,
     Command.PRIORITIZE: _prioritize,
     Command.PROPOSE_PLAN: _propose_plan,
     Command.REQUEST_PLAN_CHANGES: _request_plan_changes,

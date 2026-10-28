@@ -3,7 +3,7 @@ import uuid
 from synapse_api.db.models import Task
 from synapse_api.domain.enums import Casquette
 from synapse_api.domain.lifecycle import Actor, Command
-from synapse_api.services import execute
+from synapse_api.services import execute, propose_report
 
 from .conftest import ADMIN, AUTRE_TESTEUR, PO, TESTEUR
 
@@ -214,3 +214,84 @@ def test_bug_report_is_validated(clients):
         res = clients.as_(TESTEUR).post(f"/projects/{project}/bugs", json=BUG | {field: value})
         assert res.status_code == 422, field
     assert clients.as_(ADMIN).post(f"/projects/{project}/bugs", json=BUG).status_code == 403
+
+
+TEXT = (
+    "Quand je saisis 2 h le samedi, le total de la semaine reste à 40 h au lieu de 42 h. "
+    "Vu sur Chrome Android, en staging."
+)
+
+
+def free_text_bug(clients, project: str) -> dict:
+    res = clients.as_(TESTEUR).post(f"/projects/{project}/bugs/text", json={"text": TEXT})
+    assert res.status_code == 201, res.text
+    return res.json()
+
+
+def reformulate(session_factory, task_id: str, **changes) -> None:
+    with session_factory() as session:
+        task = session.get(Task, uuid.UUID(task_id))
+        propose_report(
+            session,
+            task,
+            Actor.agent(Casquette.DEBOGUEUR),
+            body="Voici comment je comprends le bug.",
+            payload={"report": BUG | changes, "uncertainties": ["Appareil exact non précisé."]},
+        )
+        session.commit()
+
+
+def test_tester_describes_a_bug_in_natural_language(clients):
+    project = new_project(clients)
+    bug = free_text_bug(clients, project)
+    assert bug["code"] == "BUG-001" and bug["status"] == "BACKLOG"
+    assert bug["report_required"] and bug["bug_report"] is None
+    assert bug["title"].startswith("Quand je saisis 2 h le samedi") and len(bug["title"]) <= 80
+    [opening] = clients.as_(TESTEUR).get(f"/tasks/{bug['id']}/messages").json()
+    assert opening["body"] == TEXT
+    res = command(clients, PO, bug["id"], "PRIORITIZE")
+    assert res.status_code == 409 and res.json()["detail"]["code"] == "report_not_validated"
+
+
+def test_free_text_bug_must_say_something(clients):
+    project = new_project(clients)
+    assert clients.as_(TESTEUR).post(f"/projects/{project}/bugs/text", json={"text": "  "}).status_code == 422
+    assert clients.as_(ADMIN).post(f"/projects/{project}/bugs/text", json={"text": TEXT}).status_code == 403
+
+
+def test_author_validates_the_reformulation_before_prioritization(clients, session_factory):
+    project = new_project(clients)
+    bug = free_text_bug(clients, project)["id"]
+    reformulate(session_factory, bug, title="Total hebdomadaire sans le samedi")
+
+    [decision] = clients.as_(TESTEUR).get("/decisions").json()
+    assert decision["kind"] == "REPORT" and decision["casquette"] == "DEBOGUEUR"
+    assert clients.as_(PO).get("/decisions").json() == []
+    # Seul l'auteur valide la reformulation de son signalement.
+    assert command(clients, PO, bug, "VALIDATE_REPORT").status_code == 403
+    assert command(clients, AUTRE_TESTEUR, bug, "VALIDATE_REPORT").status_code == 404
+
+    res = command(clients, TESTEUR, bug, "REQUEST_REPORT_CHANGES", "C'est sur Firefox, pas Chrome.")
+    assert res.status_code == 200 and res.json()["pending_decision"] is None
+    reformulate(session_factory, bug, title="Total hebdomadaire sans le samedi (Firefox)", device="Firefox")
+    messages = clients.as_(TESTEUR).get(f"/tasks/{bug}/messages").json()
+    [proposal_v2] = [m for m in messages if m["plan_version"] == 2]
+    assert proposal_v2["kind"] == "REPORT" and proposal_v2["payload"]["report"]["device"] == "Firefox"
+
+    res = command(clients, TESTEUR, bug, "VALIDATE_REPORT")
+    assert res.status_code == 200, res.text
+    validated = res.json()
+    assert validated["title"] == "Total hebdomadaire sans le samedi (Firefox)"
+    assert validated["bug_report"]["device"] == "Firefox" and validated["bug_report"]["expected"] == "42 h"
+    assert command(clients, PO, bug, "PRIORITIZE").json()["status"] == "TODO"
+
+
+def test_reformulation_is_checked(clients, session_factory):
+    project = new_project(clients)
+    bug = free_text_bug(clients, project)["id"]
+    try:
+        reformulate(session_factory, bug, environment="PROD")
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("Une reformulation invalide doit être refusée.")

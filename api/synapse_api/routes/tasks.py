@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.exc import StaleDataError
 
-from synapse_api.access import can_see
+from synapse_api.access import REPORTER_COMMANDS, can_see
 from synapse_api.auth import CurrentUser, User, require_any
 from synapse_api.db.models import Task, TaskEvent, TaskMessage
 from synapse_api.db.session import get_session
@@ -62,8 +62,14 @@ def post_task_message(task_id: uuid.UUID, body: MessageIn, user: User, session: 
 @router.post("/{task_id}/commands", response_model=TaskOut)
 def run_command(task_id: uuid.UUID, body: CommandIn, user: User, session: DB) -> Task:
     task = load_visible_task(session, task_id, user)
+    cmd = Command(body.command)
+    if cmd in REPORTER_COMMANDS and task.created_by != user.subject:
+        raise HTTPException(
+            status.HTTP_403_FORBIDDEN,
+            {"code": "forbidden", "message": "Seul l'auteur du signalement valide sa reformulation."},
+        )
     try:
-        execute(session, task, Command(body.command), user.as_actor(), comment=body.comment)
+        execute(session, task, cmd, user.as_actor(), comment=body.comment)
         session.commit()
     except LifecycleError as exc:
         session.rollback()

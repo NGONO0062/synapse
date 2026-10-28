@@ -1,9 +1,11 @@
 """Simulateur d'agent, pour le développement uniquement, en attendant l'orchestrateur (lot 3).
 
-Joue le rôle d'une casquette sur une tâche : propose un plan, pose une question, livre
-un résultat ou signale un échec QA. Passe par les mêmes services que l'orchestrateur,
-donc par les mêmes règles du cycle de vie. Les messages sont marqués « [Simulation] ».
+Joue le rôle d'une casquette sur une tâche : reformule un bug écrit en langage naturel,
+propose un plan, pose une question, livre un résultat ou signale un échec QA. Passe par les
+mêmes services que l'orchestrateur, donc par les mêmes règles du cycle de vie. Les messages
+sont marqués « [Simulation] ».
 
+    python -m synapse_api.dev.simulate BUG-001 report
     python -m synapse_api.dev.simulate FEAT-001 plan
     python -m synapse_api.dev.simulate BUG-002 result --project "Gestion des congés"
 """
@@ -18,7 +20,7 @@ from synapse_api.db.models import Project, Task
 from synapse_api.db.session import _session_factory
 from synapse_api.domain.enums import Casquette, MessageKind, TaskType
 from synapse_api.domain.lifecycle import Actor, Command, LifecycleError
-from synapse_api.services import add_message, execute
+from synapse_api.services import add_message, execute, propose_report
 
 PLANNERS = {
     TaskType.FEATURE: Casquette.ARCHITECTE,
@@ -48,6 +50,36 @@ def find_task(session: Session, code: str, project: str | None) -> Task:
         names = ", ".join(sorted(t.project.name for t in tasks))
         sys.exit(f"{code} existe dans plusieurs projets ({names}) : préciser --project.")
     return tasks[0]
+
+
+def report(session: Session, task: Task) -> None:
+    # Reformulation naïve : le vrai Débogueur comprendra le texte au lot 3.
+    text = task.description
+    obtained, found, expected = text.partition(" au lieu de ")
+    correction = next(
+        (e.comment for e in reversed(task.events) if e.command == Command.REQUEST_REPORT_CHANGES), None
+    )
+    propose_report(
+        session,
+        task,
+        Actor.agent(Casquette.DEBOGUEUR),
+        ai_model=task.ai_model,
+        body=TAG + "Voici comment je comprends le bug. Valide-le ou corrige-moi avant qu’il parte au PO.",
+        payload={
+            "report": {
+                "title": task.title,
+                "environment": "STAGING",
+                "device": "",
+                "steps": text,
+                "expected": expected.strip(" .") if found else "À préciser",
+                "actual": obtained.rsplit(",", 1)[-1].strip() if found else "Comportement décrit ci-dessus",
+                "severity": "MAJEUR",
+            },
+            "warnings": ["Reformulation générée par le simulateur : le texte n’a pas été analysé."],
+            "uncertainties": ["Environnement et gravité supposés : Staging, Majeur."],
+            "assumptions": [f"Correction demandée prise en compte : {correction}"] if correction else [],
+        },
+    )
 
 
 def plan(session: Session, task: Task) -> None:
@@ -142,7 +174,7 @@ def qa_failure(session: Session, task: Task) -> None:
     )
 
 
-ACTIONS = {"plan": plan, "question": question, "result": result, "qa-failure": qa_failure}
+ACTIONS = {"report": report, "plan": plan, "question": question, "result": result, "qa-failure": qa_failure}
 
 
 def main() -> None:

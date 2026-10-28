@@ -11,8 +11,17 @@ from synapse_api.auth import User, require_any
 from synapse_api.db.models import Project, Task
 from synapse_api.db.session import get_session
 from synapse_api.domain.enums import Role, TaskStatus, TaskType
-from synapse_api.schemas import BugIn, BugReport, ProjectIn, ProjectOut, ProjectSummaryOut, TaskIn, TaskOut
-from synapse_api.services import create_task
+from synapse_api.schemas import (
+    BugIn,
+    BugReport,
+    BugTextIn,
+    ProjectIn,
+    ProjectOut,
+    ProjectSummaryOut,
+    TaskIn,
+    TaskOut,
+)
+from synapse_api.services import create_task, provisional_title
 
 router = APIRouter(prefix="/projects", tags=["projets"])
 DB = Annotated[Session, Depends(get_session)]
@@ -98,6 +107,27 @@ def report_bug(project_id: uuid.UUID, body: BugIn, user: User, session: DB) -> T
         author_subject=user.subject,
         ai_model=body.ai_model,
         bug_report=report.model_dump(),
+    )
+    session.commit()
+    return task
+
+
+@router.post("/{project_id}/bugs/text", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
+def report_bug_in_words(project_id: uuid.UUID, body: BugTextIn, user: User, session: DB) -> Task:
+    """Bug décrit en langage naturel. Il reste en Backlog jusqu'à ce que son auteur
+    valide la reformulation proposée par une casquette."""
+    require_any(user, Role.PO, Role.TESTEUR)
+    project = load_project(session, project_id)
+    task = create_task(
+        session,
+        project,
+        type=TaskType.BUGFIX,
+        title=provisional_title(body.text),
+        description=body.text,
+        author=user.as_actor(),
+        author_subject=user.subject,
+        ai_model=body.ai_model,
+        report_required=True,
     )
     session.commit()
     return task

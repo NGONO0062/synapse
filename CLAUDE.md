@@ -20,6 +20,7 @@ Spécification complète : `docs/Synapse_dossier_developpement.pdf`. Maquettes :
 - Rôles utilisateurs : `PO`, `TESTEUR`, `ADMIN`.
 - Types de tâche : `FEATURE` (FEAT-), `BUGFIX` (BUG-), `DOC` (DOC-).
 - Statuts, dans cet ordre : `BACKLOG`, `TODO`, `IN_PROGRESS`, `REVIEW`, `DONE`. Pas d'autre statut. Une tâche qui attend une réponse humaine reste `IN_PROGRESS` avec un drapeau `awaiting_human`.
+- Signalement d'un bug : en langage naturel (par défaut) ou par le formulaire détaillé. Un bug écrit en langage naturel est reformulé par une casquette (titre, étapes, attendu, obtenu, environnement, gravité) ; son auteur valide la reformulation ou la fait corriger avec un commentaire. Tant qu'elle n'est pas validée, le bug reste au Backlog et ne peut pas être priorisé. Seul l'auteur du signalement valide sa reformulation.
 - Transitions : BACKLOG → TODO (priorisation PO) ; TODO → IN_PROGRESS (plan validé) ; IN_PROGRESS → REVIEW (livrable contrôlé) ; REVIEW → DONE (validation humaine, plus confirmation du testeur pour un Bugfix) ; REVIEW → IN_PROGRESS (refus avec commentaires).
 - Casquettes : Orchestrateur, Business Analyst, UX/UI Designer, Architecte, Développeur, Reviewer de code, Analyste de test, Automaticien, Expert sécurité, Débogueur, Rédacteur technique, DevOps. L'orchestrateur choisit la casquette ; l'utilisateur choisit seulement le modèle IA.
 - Environnements : `STAGING` et `PREPROD` déployés automatiquement, `PROD` uniquement par une action humaine, avec retour arrière automatique pendant 30 min si un contrôle de santé échoue.

@@ -81,13 +81,18 @@ class Task(Base):
     created_by: Mapped[str] = mapped_column(String(255), index=True)
     # Modèle IA choisi dans la barre de saisie ; la casquette, elle, est choisie par l'orchestrateur.
     ai_model: Mapped[str] = mapped_column(String(100), default=DEFAULT_AI_MODEL)
-    # Signalement structuré d'un Bugfix (écran 6), voir schemas.BugReport.
+    # Signalement structuré d'un Bugfix (écran 6), voir schemas.BugReport. Pour un bug écrit
+    # en langage naturel, il est rempli quand l'auteur valide la reformulation.
     bug_report: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # État du cycle de vie, miroir de domain.lifecycle.TaskState.
     status: Mapped[TaskStatus] = mapped_column(
         _enum(TaskStatus, "ck_tasks_status"), default=TaskStatus.BACKLOG
     )
+    report_required: Mapped[bool] = mapped_column(Boolean, default=False)
+    report_version: Mapped[int] = mapped_column(Integer, default=0)
+    validated_report_version: Mapped[int] = mapped_column(Integer, default=0)
+    rejected_report_version: Mapped[int] = mapped_column(Integer, default=0)
     plan_version: Mapped[int] = mapped_column(Integer, default=0)
     validated_plan_version: Mapped[int] = mapped_column(Integer, default=0)
     rejected_plan_version: Mapped[int] = mapped_column(Integer, default=0)
@@ -124,6 +129,10 @@ class Task(Base):
         return TaskState(
             type=self.type,
             status=self.status,
+            report_required=self.report_required,
+            report_version=self.report_version,
+            validated_report_version=self.validated_report_version,
+            rejected_report_version=self.rejected_report_version,
             plan_version=self.plan_version,
             validated_plan_version=self.validated_plan_version,
             rejected_plan_version=self.rejected_plan_version,
@@ -178,6 +187,7 @@ class TaskMessage(Base):
     body: Mapped[str] = mapped_column(Text, default="")
     # Contenu structuré d'une proposition (plan ou résultat), voir schemas.ProposalPayload.
     payload: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # Version du plan (PLAN) ou de la reformulation (REPORT) que porte le message.
     plan_version: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
