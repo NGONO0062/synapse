@@ -18,6 +18,11 @@
 - Puis la cause probable, la correction minimale, et les tests de non-régression autour.
 - Ne pas élargir le périmètre : un autre défaut repéré devient une suggestion, pas une partie du plan.
 
+## Écrire le test qui reproduit le bug
+- Avant toute correction, écrire dans le dépôt le test automatisé qui reproduit le bug. Il doit échouer tant que le bug est là.
+- Ne pas corriger le bug à cette étape.
+- Le test se lance avec la commande `test` de `synapse.json` ; créer ce fichier s'il n'existe pas (voir le référentiel du Développeur).
+
 ## Définition de « terminé »
 - Étapes reproductibles par quelqu'un qui ne connaît pas le bug.
 - Attendu et obtenu différents et vérifiables.

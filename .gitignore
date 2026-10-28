@@ -10,6 +10,9 @@ __pycache__/
 .env
 infra/.env
 
+# Dépôts et copies de travail des casquettes (api/var)
+api/var/
+
 # Divers
 .DS_Store
 *.db

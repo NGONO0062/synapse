@@ -1,6 +1,7 @@
 """Graphe de l'orchestrateur (LangGraph) : un sous-graphe par casquette (section 12).
 
-    orchestrateur : préparer le dossier → sous-graphe de la casquette qui rédige
+    orchestrateur : préparer le dossier → sous-graphe de la casquette qui rédige,
+                    ou sous-graphe d'exécution (execution.py) pour une tâche en In progress
     casquette     : brouillon → définition de « terminé » → relecture → publication
                        ↑________ corrections (3 brouillons au plus) ________|
 
@@ -10,62 +11,24 @@ elle s'est arrêtée, sans refaire les appels déjà faits (section 11, robustes
 
 import json
 import uuid
-from dataclasses import dataclass
-from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
-from sqlalchemy.orm import Session, sessionmaker
 
 from synapse_api.agents.casquettes import LABELS, referentiel, system_prompt
-from synapse_api.agents.gateway import ModelFactory
+from synapse_api.agents.execution import execution_graph
 from synapse_api.agents.jobs import AUTHORS, JOBS, Assignment, Job, Review, assignment_for, brief
+from synapse_api.agents.state import Deps, WorkState
 from synapse_api.db.models import Task
-from synapse_api.domain.enums import Casquette, TaskType
+from synapse_api.domain.enums import Casquette
 from synapse_api.domain.lifecycle import Actor
 
 # Au-delà, la proposition part quand même, avec les points non résolus en avertissement :
 # c'est l'humain qui tranche.
 MAX_DRAFTS = 3
+# Étapes LangGraph permises par fil : une exécution enchaîne réalisation, relecture et QA.
+RECURSION_LIMIT = 200
 
-
-class WorkState(TypedDict, total=False):
-    task_id: str
-    code: str
-    job: str
-    version: int
-    task_type: str
-    ai_model: str
-    brief: str
-    draft: dict[str, Any]
-    drafts: int
-    feedback: list[str]  # corrections à reprendre, ou avertissements si la limite est atteinte
-    outcome: str  # « published », ou « obsolete » si la tâche a changé entre-temps
-
-
-@dataclass(frozen=True)
-class Deps:
-    sessions: sessionmaker[Session]
-    model: ModelFactory
-
-
-def initial_state(assignment: Assignment) -> WorkState:
-    return {
-        "task_id": str(assignment.task_id),
-        "code": assignment.code,
-        "job": assignment.job.value,
-        "version": assignment.version,
-        "task_type": assignment.task_type.value,
-    }
-
-
-def _assignment(state: WorkState) -> Assignment:
-    return Assignment(
-        uuid.UUID(state["task_id"]),
-        state["code"],
-        Job(state["job"]),
-        state["version"],
-        TaskType(state["task_type"]),
-    )
+__all__ = ["Deps", "build_orchestrator", "run"]
 
 
 def _bullets(items: list[str]) -> str:
@@ -76,7 +39,7 @@ def casquette_graph(casquette: Casquette, deps: Deps):
     """Sous-graphe d'une casquette : elle rédige, vérifie, se fait relire, puis publie."""
 
     def draft(state: WorkState) -> WorkState:
-        a = _assignment(state)
+        a = Assignment.from_state(state)
         spec = JOBS[a.job]
         prompt = f"{state['brief']}\n\nTa mission : {spec.instruction(a.job, a.task_type)}"
         if state.get("feedback"):
@@ -90,13 +53,13 @@ def casquette_graph(casquette: Casquette, deps: Deps):
         return {"draft": answer.model_dump(mode="json"), "drafts": state.get("drafts", 0) + 1, "feedback": []}
 
     def check(state: WorkState) -> WorkState:
-        a = _assignment(state)
+        a = Assignment.from_state(state)
         spec = JOBS[a.job]
         problems = spec.check(spec.schema.model_validate(state["draft"]), a.task_type)
         return {"feedback": [f"Définition de « terminé » : {p}" for p in problems]}
 
     def review(state: WorkState) -> WorkState:
-        a = _assignment(state)
+        a = Assignment.from_state(state)
         prompt = (
             f"{state['brief']}\n\nProposition du {LABELS[casquette]} :\n"
             f"{json.dumps(state['draft'], ensure_ascii=False, indent=2)}\n\n"
@@ -115,7 +78,7 @@ def casquette_graph(casquette: Casquette, deps: Deps):
         }
 
     def publish(state: WorkState) -> WorkState:
-        a = _assignment(state)
+        a = Assignment.from_state(state)
         spec = JOBS[a.job]
         with deps.sessions() as session:
             task = session.get(Task, a.task_id)
@@ -160,24 +123,27 @@ def build_orchestrator(deps: Deps, checkpointer=None):
             return {"brief": brief(task), "ai_model": task.ai_model, "drafts": 0, "feedback": []}
 
     def route(state: WorkState) -> str:
-        return _assignment(state).author.value.lower()
+        a = Assignment.from_state(state)
+        return "execution" if a.job is Job.EXECUTE else a.author.value.lower()
 
-    authors = sorted(set(AUTHORS.values()))
+    writers = sorted({c for (job, _), c in AUTHORS.items() if job is not Job.EXECUTE})
     graph = StateGraph(WorkState)
     graph.add_node("prepare", prepare)
-    for casquette in authors:
+    graph.add_node("execution", execution_graph(deps))
+    graph.add_edge("execution", END)
+    for casquette in writers:
         graph.add_node(casquette.value.lower(), casquette_graph(casquette, deps))
         graph.add_edge(casquette.value.lower(), END)
     graph.add_edge(START, "prepare")
-    graph.add_conditional_edges("prepare", route, [c.value.lower() for c in authors])
+    graph.add_conditional_edges("prepare", route, ["execution", *[c.value.lower() for c in writers]])
     return graph.compile(checkpointer=checkpointer, name="orchestrateur")
 
 
 def run(orchestrator, assignment: Assignment) -> str:
     """Fait avancer un travail ; reprend au point d'arrêt s'il a été interrompu."""
-    config = {"configurable": {"thread_id": assignment.thread_id}}
+    config = {"configurable": {"thread_id": assignment.thread_id}, "recursion_limit": RECURSION_LIMIT}
     if orchestrator.get_state(config).next:
         result = orchestrator.invoke(None, config)
     else:
-        result = orchestrator.invoke(initial_state(assignment), config)
+        result = orchestrator.invoke(assignment.to_state(), config)
     return result["outcome"]

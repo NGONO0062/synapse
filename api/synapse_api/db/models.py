@@ -105,6 +105,11 @@ class Task(Base):
     result_validated: Mapped[bool] = mapped_column(Boolean, default=False)
     tester_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    # Branche Git où les casquettes travaillent (synapse/feat-001), et commit de sa fusion
+    # dans main, faite seulement quand la tâche est en Done.
+    branch: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    merged_commit: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     # Verrou optimiste : deux décisions concurrentes sur la même tâche ne s'écrasent pas.

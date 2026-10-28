@@ -2,7 +2,9 @@
 
 L'orchestrateur lit l'état du cycle de vie pour savoir ce qui est dû (section 5) :
 - un bug écrit en langage naturel attend sa reformulation (Débogueur) ;
-- une tâche en To do sans plan à valider attend son plan (Architecte, Débogueur ou Rédacteur).
+- une tâche en To do sans plan à valider attend son plan (Architecte, Débogueur ou Rédacteur) ;
+- une tâche en In progress qui n'attend pas l'humain s'exécute (Développeur ou Rédacteur, voir
+  execution.py).
 """
 
 import json
@@ -18,7 +20,7 @@ from sqlalchemy.orm import Session
 from synapse_api.agents.casquettes import LABELS
 from synapse_api.db.models import Task
 from synapse_api.domain.enums import Casquette, TaskStatus, TaskType
-from synapse_api.domain.lifecycle import Actor, ActorKind
+from synapse_api.domain.lifecycle import Actor, ActorKind, Command
 from synapse_api.schemas import ReformulatedReport
 from synapse_api.services import propose_plan, propose_report
 
@@ -26,6 +28,7 @@ from synapse_api.services import propose_plan, propose_report
 class Job(StrEnum):
     REPORT = "REPORT"  # reformuler un bug écrit en langage naturel
     PLAN = "PLAN"  # proposer le plan d'une tâche en To do
+    EXECUTE = "EXECUTE"  # réaliser le plan validé, jusqu'au livrable en Review
 
 
 # Chaîne de casquettes (section 5) : qui rédige, qui relit avant l'humain.
@@ -34,13 +37,22 @@ AUTHORS = {
     (Job.PLAN, TaskType.FEATURE): Casquette.ARCHITECTE,
     (Job.PLAN, TaskType.BUGFIX): Casquette.DEBOGUEUR,
     (Job.PLAN, TaskType.DOC): Casquette.REDACTEUR,
+    (Job.EXECUTE, TaskType.FEATURE): Casquette.DEVELOPPEUR,
+    (Job.EXECUTE, TaskType.BUGFIX): Casquette.DEVELOPPEUR,
+    (Job.EXECUTE, TaskType.DOC): Casquette.REDACTEUR,
 }
 REVIEWERS = {
     (Job.REPORT, TaskType.BUGFIX): Casquette.ANALYSTE_TEST,
     (Job.PLAN, TaskType.FEATURE): Casquette.BUSINESS_ANALYST,
     (Job.PLAN, TaskType.BUGFIX): Casquette.REVIEWER,
     (Job.PLAN, TaskType.DOC): Casquette.BUSINESS_ANALYST,
+    (Job.EXECUTE, TaskType.FEATURE): Casquette.REVIEWER,
+    (Job.EXECUTE, TaskType.BUGFIX): Casquette.REVIEWER,
+    (Job.EXECUTE, TaskType.DOC): Casquette.BUSINESS_ANALYST,
 }
+
+# Décisions humaines qui (re)lancent l'exécution : chacune ouvre un nouveau fil LangGraph.
+EXECUTION_TRIGGERS = {Command.VALIDATE_PLAN, Command.ANSWER_HUMAN, Command.REJECT_RESULT}
 
 
 @dataclass(frozen=True)
@@ -50,7 +62,7 @@ class Assignment:
     task_id: uuid.UUID
     code: str
     job: Job
-    version: int  # version de la proposition à produire
+    version: int  # version de la proposition à produire, ou rang de l'exécution
     task_type: TaskType
 
     @property
@@ -60,6 +72,25 @@ class Assignment:
     @property
     def reviewer(self) -> Casquette:
         return REVIEWERS[(self.job, self.task_type)]
+
+    @classmethod
+    def from_state(cls, state: dict) -> "Assignment":
+        return cls(
+            uuid.UUID(state["task_id"]),
+            state["code"],
+            Job(state["job"]),
+            state["version"],
+            TaskType(state["task_type"]),
+        )
+
+    def to_state(self) -> dict:
+        return {
+            "task_id": str(self.task_id),
+            "code": self.code,
+            "job": self.job.value,
+            "version": self.version,
+            "task_type": self.task_type.value,
+        }
 
     @property
     def thread_id(self) -> str:
@@ -78,12 +109,21 @@ def assignment_for(task: Task) -> Assignment | None:
         return Assignment(task.id, task.code, Job.REPORT, state.report_version + 1, task.type)
     if state.status is TaskStatus.TODO and not state.has_pending_plan:
         return Assignment(task.id, task.code, Job.PLAN, state.plan_version + 1, task.type)
+    if state.status is TaskStatus.IN_PROGRESS and not state.awaiting_human:
+        runs = sum(1 for e in task.events if e.command in EXECUTION_TRIGGERS)
+        return Assignment(task.id, task.code, Job.EXECUTE, runs, task.type)
     return None
+
+
+def branch_name(code: str) -> str:
+    return f"synapse/{code.lower()}"
 
 
 def due_assignments(session: Session) -> list[Assignment]:
     query = (
-        select(Task).where(Task.status.in_([TaskStatus.BACKLOG, TaskStatus.TODO])).order_by(Task.updated_at)
+        select(Task)
+        .where(Task.status.in_([TaskStatus.BACKLOG, TaskStatus.TODO, TaskStatus.IN_PROGRESS]))
+        .order_by(Task.updated_at)
     )
     return [a for task in session.scalars(query) if (a := assignment_for(task))]
 
@@ -128,11 +168,22 @@ def brief(task: Task) -> str:
             items.append((e.created_at, text + (f" : « {e.comment} »" if e.comment else ".")))
     lines += ["", "Fil de la tâche, du plus ancien au plus récent :"]
     lines += [f"- {text}" for _, text in sorted(items, key=lambda item: item[0])]
+
+    validated = next(
+        (m for m in task.messages if m.kind == "PLAN" and m.plan_version == task.validated_plan_version),
+        None,
+    )
+    if task.validated_plan_version and validated:
+        plan = json.dumps(_essential(validated.payload or {}), ensure_ascii=False, indent=2)
+        lines += ["", f"Plan validé par le PO (version {task.validated_plan_version}) :", plan]
     return "\n".join(lines)
 
 
 def _essential(payload: dict) -> dict:
-    return {k: v for k, v in payload.items() if v not in (None, [], "")}
+    kept = {k: v for k, v in payload.items() if v not in (None, [], "")}
+    if "files" in kept:  # le diff complet est dans le dépôt, pas dans le dossier
+        kept["files"] = [f["path"] for f in kept["files"]]
+    return kept
 
 
 # Réponses attendues des modèles.

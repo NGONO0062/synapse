@@ -9,24 +9,82 @@ L'état des graphes est sauvegardé dans PostgreSQL (tables du checkpointer Lang
 import argparse
 import logging
 import time
+from datetime import UTC, datetime
 
 from langgraph.checkpoint.postgres import PostgresSaver
+from sqlalchemy import select
 
 from synapse_api.agents.casquettes import LABELS
 from synapse_api.agents.gateway import LiteLLMModel
 from synapse_api.agents.graph import Deps, build_orchestrator, run
 from synapse_api.agents.jobs import Job, due_assignments
+from synapse_api.agents.sandbox import Workspace
 from synapse_api.config import get_settings
+from synapse_api.db.models import Task
 from synapse_api.db.session import _session_factory
+from synapse_api.domain.enums import Casquette, MessageKind, TaskStatus
+from synapse_api.domain.lifecycle import Actor, Command, is_execution_overdue
+from synapse_api.services import add_message, execute
 
 log = logging.getLogger("synapse.orchestrateur")
 
-JOB_LABELS = {Job.REPORT: "reformulation", Job.PLAN: "plan"}
+JOB_LABELS = {Job.REPORT: "reformulation", Job.PLAN: "plan", Job.EXECUTE: "exécution"}
+
+
+def escalate_overdue(deps: Deps, now: datetime | None = None) -> list[str]:
+    """Durée maximale d'exécution atteinte (2 h) : la tâche remonte au PO."""
+    now = now or datetime.now(UTC)
+    escalated = []
+    with deps.sessions() as session:
+        running = select(Task).where(Task.status == TaskStatus.IN_PROGRESS, Task.awaiting_human.is_(False))
+        for task in session.scalars(running):
+            if is_execution_overdue(task.lifecycle_state(), now):
+                execute(
+                    session, task, Command.ESCALATE_TIMEOUT, Actor.agent(Casquette.ORCHESTRATEUR), now=now
+                )
+                escalated.append(task.code)
+        session.commit()
+    return escalated
+
+
+def merge_done(deps: Deps, retry_at: dict[str, float]) -> list[str]:
+    """Tâche en Done : le DevOps fusionne sa branche dans main."""
+    merged = []
+    with deps.sessions() as session:
+        done = select(Task).where(
+            Task.status == TaskStatus.DONE, Task.branch.is_not(None), Task.merged_commit.is_(None)
+        )
+        for task in session.scalars(done).all():
+            key = f"merge:{task.id}"
+            if retry_at.get(key, 0) > time.monotonic():
+                continue
+            ws = Workspace(deps.git_dir, task.project_id, task.id, task.branch)
+            try:
+                ws.ensure()
+                task.merged_commit = ws.merge_into_main(f"{task.code} : {task.title}")
+            except Exception as exc:  # noqa: BLE001 : réessayé plus tard, sans bloquer les autres
+                retry_at[key] = time.monotonic() + get_settings().orchestrator_retry_delay
+                log.warning("%s · fusion dans main impossible : %s", task.code, exc)
+                continue
+            add_message(
+                session,
+                task,
+                kind=MessageKind.MESSAGE,
+                author=Actor.agent(Casquette.DEVOPS),
+                body=f"Branche {task.branch} fusionnée dans main (commit {task.merged_commit[:8]}).",
+            )
+            session.commit()
+            merged.append(task.code)
+    return merged
 
 
 def run_once(orchestrator, deps: Deps, retry_at: dict[str, float] | None = None) -> dict[str, str]:
     """Un tour : chaque travail dû avance d'un coup. Renvoie l'issue par fil LangGraph."""
     retry_at = retry_at if retry_at is not None else {}
+    for code in escalate_overdue(deps):
+        log.info("%s · 2 h d'exécution atteintes : remontée au PO", code)
+    for code in merge_done(deps, retry_at):
+        log.info("%s · branche fusionnée dans main", code)
     with deps.sessions() as session:
         assignments = due_assignments(session)
     outcomes = {}

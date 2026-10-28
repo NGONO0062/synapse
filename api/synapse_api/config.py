@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -21,6 +22,14 @@ class Settings(BaseSettings):
     # Orchestrateur : délai entre deux tours, et avant de réessayer un travail en échec (secondes).
     orchestrator_interval: float = 5
     orchestrator_retry_delay: float = 60
+
+    # Dépôts Git des projets et copies de travail des tâches (lot 3b).
+    git_dir: Path = Path("var")
+    # Bac à sable : un conteneur jetable par commande, propre à la tâche, sans réseau ni secret.
+    sandbox_image: str = "node:22-bookworm"  # si le dépôt ne déclare pas le sien (synapse.json)
+    sandbox_cpus: str = "2"
+    sandbox_memory: str = "2g"
+    sandbox_timeout: int = 900  # secondes par commande
 
     @property
     def oidc_jwks_url(self) -> str:

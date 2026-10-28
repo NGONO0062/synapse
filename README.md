@@ -40,14 +40,24 @@ Le worker (`python -m synapse_api.agents.worker`, `--once` pour un seul tour) li
 | Plan d'une Feature | Architecte | Business Analyst |
 | Plan d'un Bugfix (test en échec d'abord) | Débogueur | Reviewer de code |
 | Plan d'une Doc | Rédacteur technique | Business Analyst |
+| Exécuter une Feature (plan validé) | Développeur | Reviewer de code, puis tests dans le bac à sable |
+| Exécuter un Bugfix | Débogueur (test qui doit échouer), puis Développeur | Reviewer de code, puis tests |
+| Exécuter une Doc | Rédacteur technique | Business Analyst |
 
 Chaque casquette charge son référentiel (`api/synapse_api/agents/referentiels/`), dont la version est journalisée avec la proposition, vérifie sa définition de « terminé », puis se fait relire. Après 3 brouillons, la proposition part quand même, avec les points non résolus en avertissement. L'état des graphes LangGraph est sauvegardé dans Postgres : un travail interrompu reprend là où il s'est arrêté.
 
-Il faut une clé de fournisseur dans `infra/.env` (par exemple `ANTHROPIC_API_KEY`) et le conteneur `litellm` démarré.
+Exécution d'une tâche en In progress :
+- Chaque projet a un dépôt Git géré par Synapse (`api/var/repos/<projet>.git`) ; chaque tâche travaille sur sa branche (`synapse/feat-001`), dans sa copie de travail (`api/var/workspaces/<tâche>`). La branche est fusionnée dans `main` quand la tâche passe en Done.
+- Le code généré ne s'exécute que dans un conteneur Docker jetable : pas de réseau (sauf pendant `install`), pas de secret, pas de capacité système, CPU, mémoire et durée bornés. Le dépôt déclare son image et ses commandes dans `synapse.json` : `{"image": "python:3.12-slim", "install": "pip install -r requirements.txt", "test": "python -m pytest -q"}`.
+- Le Développeur peut poser une question au PO, ou proposer un nouveau plan au lieu de s'écarter du plan validé : la tâche s'arrête alors en attente.
+- 3 échecs des tests : la tâche remonte au PO. 2 h d'exécution : idem.
+- Le livrable en Review porte le vrai diff et les vrais contrôles. Les scénarios de l'Analyste de test et les E2E Playwright ne sont pas encore automatisés.
+
+Il faut une clé de fournisseur dans `infra/.env` (par exemple `ANTHROPIC_API_KEY`), le conteneur `litellm` démarré, et Docker pour le bac à sable.
 
 ## Simuler les agents
 
-Sans clé de fournisseur, ou pour l'exécution (lot 3b), un simulateur joue le rôle des casquettes sur une tâche, en passant par les mêmes règles du cycle de vie. Ses messages sont marqués « [Simulation] ». Ne pas le lancer pour `report` ou `plan` pendant que le worker tourne : le worker les fait déjà.
+Sans clé de fournisseur, un simulateur joue le rôle des casquettes sur une tâche, en passant par les mêmes règles du cycle de vie. Ses messages sont marqués « [Simulation] ». Ne pas le lancer pendant que le worker tourne : le worker fait déjà tout cela.
 
 ```bash
 cd api
@@ -69,6 +79,7 @@ Pour un Bugfix, le plan porte le test qui reproduit le bug, et le résultat ouvr
 
 ```bash
 cd api && .venv/Scripts/python -m pytest && .venv/Scripts/python -m ruff check .
+SYNAPSE_DOCKER_TESTS=1 .venv/Scripts/python -m pytest tests/test_execution.py -k real_   # bac à sable réel (Docker)
 cd web && npm run typecheck && npm run lint && npm run build
 ```
 
@@ -82,5 +93,5 @@ cd web && npm run typecheck && npm run lint && npm run build
 | 2b · Bugfix et testeur | Signalement structuré d'un bug (écran du testeur), test qui reproduit le bug dans le plan, panneau du livrable (diff, contrôles) avec la décision, confirmation du testeur | Fait |
 | 2c · Bug en langage naturel | Signalement en quelques mots (mode par défaut), reformulation par une casquette, validation ou correction par l'auteur avant la priorisation | Fait |
 | 3a · Orchestrateur | Worker LangGraph (état dans Postgres), passerelle LiteLLM, un sous-graphe par casquette, référentiels versionnés, définition de « terminé », relecture par une autre casquette ; reformulation des bugs et plans | Fait |
-| 3b · Exécution | Bac à sable (un conteneur par tâche), dépôt Git, Développeur, Reviewer, QA, livrable réel | À faire |
+| 3b · Exécution | Bac à sable Docker, dépôt Git par projet et branche par tâche, test qui reproduit le bug, Développeur, relecture du code, tests dans le bac à sable (3 essais), question ou nouveau plan, livrable réel, fusion dans main en Done, remontée à 2 h | Fait |
 | 3c · Traçabilité et coûts | Consommation par projet et par modèle, cas de référence rejoués | À faire |
