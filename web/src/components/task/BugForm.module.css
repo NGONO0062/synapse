@@ -1,0 +1,122 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid var(--sy-border);
+  border-radius: var(--sy-radius-card-lg);
+  background: var(--sy-surface);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.row > .field {
+  flex: 1 1 220px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label,
+.label,
+.severity legend {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.field input,
+.field select,
+.field textarea {
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--sy-border-strong);
+  border-radius: var(--sy-radius-field);
+  background: var(--sy-bg);
+  font-size: 15px;
+}
+
+.field textarea {
+  padding: 12px 14px;
+  resize: vertical;
+}
+
+.field input::placeholder,
+.field textarea::placeholder {
+  color: var(--sy-placeholder);
+}
+
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible {
+  outline: none;
+  border-color: var(--sy-ai);
+}
+
+.severity {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.severity legend {
+  padding: 0 0 8px;
+}
+
+.choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--sy-touch);
+  padding: 0 14px;
+  border: 1px solid var(--sy-border-strong);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.choice:has(input:checked) {
+  border-color: var(--sy-ai);
+}
+
+.choice input {
+  accent-color: var(--sy-ai);
+}
+
+.drop {
+  padding: 16px;
+  border: 1px dashed var(--sy-border-dashed);
+  border-radius: 10px;
+  background: var(--sy-bg);
+  color: var(--sy-text-muted);
+  font-size: 13px;
+}
+
+.error {
+  padding: 10px 14px;
+  border-radius: var(--sy-radius-field);
+  background: var(--sy-error-bg);
+  color: var(--sy-error-text);
+  font-size: 14px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid var(--sy-border-soft);
+}

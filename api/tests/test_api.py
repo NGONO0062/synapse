@@ -184,3 +184,33 @@ def test_unknown_ai_model_is_rejected(clients):
         f"/projects/{project}/tasks", json={"type": "DOC", "title": "x", "ai_model": "gpt-99"}
     )
     assert res.status_code == 422
+
+
+BUG = {
+    "title": "Le total de la semaine ne compte pas le samedi",
+    "environment": "STAGING",
+    "device": "Chrome, Android",
+    "steps": "1. Saisir 8 h du lundi au vendredi\n2. Saisir 2 h le samedi",
+    "expected": "42 h",
+    "actual": "40 h",
+    "severity": "MAJEUR",
+}
+
+
+def test_tester_reports_a_structured_bug(clients):
+    project = new_project(clients)
+    res = clients.as_(TESTEUR).post(f"/projects/{project}/bugs", json=BUG)
+    assert res.status_code == 201, res.text
+    bug = res.json()
+    assert bug["code"] == "BUG-001" and bug["status"] == "BACKLOG"
+    assert bug["bug_report"]["severity"] == "MAJEUR" and bug["bug_report"]["environment"] == "STAGING"
+    [opening] = clients.as_(TESTEUR).get(f"/tasks/{bug['id']}/messages").json()
+    assert opening["author_name"] == "Brice Nkoulou" and "Attendu : 42 h" in opening["body"]
+
+
+def test_bug_report_is_validated(clients):
+    project = new_project(clients)
+    for field, value in [("environment", "PROD"), ("severity", "URGENT"), ("steps", "")]:
+        res = clients.as_(TESTEUR).post(f"/projects/{project}/bugs", json=BUG | {field: value})
+        assert res.status_code == 422, field
+    assert clients.as_(ADMIN).post(f"/projects/{project}/bugs", json=BUG).status_code == 403

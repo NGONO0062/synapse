@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start -p 3200",
     "lint": "eslint",
-    "typecheck": "npm run tokens && tsc --noEmit"
+    "typecheck": "npm run tokens && next typegen && tsc --noEmit"
   },
   "dependencies": {
     "jose": "^6.2.13",

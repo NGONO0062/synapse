@@ -8,6 +8,8 @@
   --sy-border: #2A2D35;
   --sy-border-soft: #23262D;
   --sy-border-strong: #353943;
+  --sy-divider: #1D1F25; /* séparateurs de la barre latérale et des en-têtes */
+  --sy-border-dashed: #3E424C; /* zone de dépôt de fichiers */
 
   /* Texte */
   --sy-text: #F2F3F5;
@@ -15,6 +17,7 @@
   --sy-text-soft: #C5C9D1;
   --sy-placeholder: #7D828D;
   --sy-link: #AEB7FF;
+  --sy-link-hover: #CDD3FF;
 
   /* IA (indigo) */
   --sy-ai: #8E9BFF;
@@ -30,6 +33,10 @@
   /* Bugfix / erreur */
   --sy-error-bg: #3A1B18;
   --sy-error-text: #F2A7A0;
+
+  /* Succès technique (tests au vert, lignes ajoutées) — distinct du vert humain */
+  --sy-success-bg: #173A22;
+  --sy-success-text: #7FD69A;
 
   /* Attention */
   --sy-warn-bg: #3A2614;

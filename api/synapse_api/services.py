@@ -20,6 +20,7 @@ def create_task(
     author: Actor,
     author_subject: str,
     ai_model: str = DEFAULT_AI_MODEL,
+    bug_report: dict | None = None,
 ) -> Task:
     # Numérotation par projet et par type : FEAT-001, BUG-001, DOC-001…
     # La contrainte d'unicité (project_id, type, number) protège des créations concurrentes.
@@ -34,6 +35,7 @@ def create_task(
         description=description,
         created_by=author_subject,
         ai_model=ai_model,
+        bug_report=bug_report,
     )
     session.add(task)
     session.flush()

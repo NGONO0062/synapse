@@ -4,7 +4,7 @@
   justify-content: space-between;
   gap: 8px;
   padding: 4px 12px 10px;
-  border-bottom: 1px solid var(--sy-border-soft);
+  border-bottom: 1px solid var(--sy-divider);
 }
 
 .switcher {
@@ -108,4 +108,10 @@
 
 .awaiting {
   color: var(--sy-warn-text);
+}
+
+.caption {
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--sy-text-muted);
 }

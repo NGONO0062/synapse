@@ -8,6 +8,7 @@ import { STATUS_COLORS } from "@/components/ui/StatusDot";
 import { TypeTag } from "@/components/ui/Tag";
 import { Logo } from "@/components/ui/Logo";
 import { apiFind, apiGet, type Project, type ProjectSummary, type Task } from "@/lib/api";
+import { getCurrentUser } from "@/lib/auth/current-user";
 import { STATUS_LABELS, TASK_STATUSES } from "@/lib/domain";
 import styles from "./layout.module.css";
 
@@ -36,10 +37,12 @@ async function ProjectNav({ params }: { params: Promise<{ projectId: string }> }
   const { projectId } = await params;
   const project = await apiFind<Project>(`/projects/${projectId}`);
   if (!project) notFound();
-  const [tasks, projects] = await Promise.all([
+  const [tasks, projects, user] = await Promise.all([
     apiGet<Task[]>(`/projects/${projectId}/tasks`),
     apiGet<ProjectSummary[]>("/projects"),
+    getCurrentUser(),
   ]);
+  const isPO = user.roles.includes("PO");
   const others = projects.filter((p) => p.id !== projectId);
 
   return (
@@ -64,14 +67,19 @@ async function ProjectNav({ params }: { params: Promise<{ projectId: string }> }
             </Link>
           </div>
         </details>
-        <Link href={`/projets/${projectId}`} className={styles.newTask} aria-label="Nouvelle tâche">
+        <Link
+          href={isPO ? `/projets/${projectId}` : `/projets/${projectId}/bugs/nouveau`}
+          className={styles.newTask}
+          aria-label={isPO ? "Nouvelle tâche" : "Signaler un bug"}
+        >
           <svg aria-hidden width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
             <path d="M8 3v10M3 8h10" />
           </svg>
         </Link>
       </div>
 
-      <nav className={styles.groups} aria-label="Tâches par statut">
+      <nav className={styles.groups} aria-label={isPO ? "Tâches par statut" : "Mes bugs par statut"}>
+        {!isPO && <span className={styles.caption}>Mes bugs signalés</span>}
         {TASK_STATUSES.map((status) => {
           const group = tasks.filter((t) => t.status === status);
           return (
@@ -92,6 +100,7 @@ async function ProjectNav({ params }: { params: Promise<{ projectId: string }> }
                     <TypeTag type={task.type} small />
                     <code>{task.code}</code>
                     {task.awaiting_human && <span className={styles.awaiting}>en attente</span>}
+                    {task.pending_decision === "TESTER_CONFIRMATION" && <span>· à confirmer</span>}
                   </span>
                 </NavLink>
               ))}

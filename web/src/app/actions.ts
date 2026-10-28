@@ -38,6 +38,25 @@ export async function createTask(projectId: string, _: ActionState, form: FormDa
   redirect(`/projets/${projectId}/taches/${result.data.code}`);
 }
 
+/** Écran 6 : signalement structuré d'un bug. */
+export async function reportBug(projectId: string, _: ActionState, form: FormData): Promise<ActionState> {
+  const fields = ["title", "steps", "expected", "actual"] as const;
+  if (fields.some((f) => !text(form, f))) {
+    return { error: "Titre, étapes, résultat attendu et résultat obtenu sont obligatoires." };
+  }
+  const result = await apiSend<Task>("POST", `/projects/${projectId}/bugs`, {
+    title: text(form, "title"),
+    environment: text(form, "environment") || "STAGING",
+    device: text(form, "device"),
+    steps: text(form, "steps"),
+    expected: text(form, "expected"),
+    actual: text(form, "actual"),
+    severity: text(form, "severity") || "MAJEUR",
+  });
+  if (!result.ok) return { error: result.error };
+  redirect(`/projets/${projectId}/taches/${result.data.code}`);
+}
+
 /** Décision humaine sur une tâche (prioriser, valider, refuser, répondre, confirmer). */
 export async function runCommand(
   taskId: string,

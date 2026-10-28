@@ -46,6 +46,10 @@ a {
   color: var(--sy-link);
 }
 
+a:where(:hover) {
+  color: var(--sy-link-hover);
+}
+
 code,
 kbd {
   font-family: var(--sy-font-mono);

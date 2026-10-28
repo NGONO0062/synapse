@@ -95,3 +95,7 @@ export function modelLabel(id: string): string {
 export function casquetteLabel(casquette: string | null | undefined): string {
   return casquette && casquette in CASQUETTES ? CASQUETTES[casquette as Casquette].label : "Agent";
 }
+
+export const ENVIRONMENT_LABELS = { STAGING: "Staging", PREPROD: "Préprod", PROD: "Prod" } as const;
+
+export const SEVERITY_LABELS = { BLOQUANT: "Bloquant", MAJEUR: "Majeur", MINEUR: "Mineur" } as const;

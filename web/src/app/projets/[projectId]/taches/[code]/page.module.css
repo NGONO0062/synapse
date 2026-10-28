@@ -1,5 +1,12 @@
-.thread {
+.layout {
   flex: 1 1 auto;
+  display: flex;
+  min-height: 100vh;
+}
+
+.thread {
+  flex: 999 1 480px;
+  min-width: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -12,7 +19,7 @@
   gap: 10px;
   padding: 10px 24px;
   min-height: 60px;
-  border-bottom: 1px solid var(--sy-border-soft);
+  border-bottom: 1px solid var(--sy-divider);
 }
 
 .top h1 {
@@ -110,4 +117,61 @@
   border-radius: var(--sy-radius-field);
   background: var(--sy-warn-bg);
   color: var(--sy-warn-text);
+}
+
+/* Étiquette d'état sous le lien du livrable : pas étirée sur toute la largeur. */
+.status {
+  align-self: flex-start;
+}
+
+.failing {
+  align-self: flex-start;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--sy-error-bg);
+  color: var(--sy-error-text);
+  font-size: 13px;
+}
+
+.report {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.reporter {
+  color: var(--sy-error-text);
+  font-weight: 600;
+}
+
+.reportBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: var(--sy-radius-card-lg);
+  background: var(--sy-surface-active);
+  font-size: 14px;
+}
+
+.reportBody div {
+  display: flex;
+  gap: 6px;
+}
+
+.reportBody dt {
+  flex: none;
+  font-weight: 600;
+}
+
+.reportBody dd {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 1100px) {
+  .layout {
+    flex-direction: column;
+  }
 }

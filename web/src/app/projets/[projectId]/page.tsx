@@ -1,11 +1,13 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { createTask } from "@/app/actions";
+import { BugForm } from "@/components/task/BugForm";
 import { Composer } from "@/components/task/Composer";
 import { Logo } from "@/components/ui/Logo";
 import { apiFind, type Project } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth/current-user";
-import { TASK_TYPES, type TaskType } from "@/lib/domain";
+import { TASK_TYPES } from "@/lib/domain";
 import styles from "./page.module.css";
 
 // Accueil d'un projet : lancer une demande (Feature, Bugfix, Doc).
@@ -21,8 +23,15 @@ async function ProjectHome({ params }: { params: Promise<{ projectId: string }> 
   const { projectId } = await params;
   const [project, user] = await Promise.all([apiFind<Project>(`/projects/${projectId}`), getCurrentUser()]);
   if (!project) notFound();
-  // Le testeur ne signale que des bugs.
-  const types: readonly TaskType[] = user.roles.includes("PO") ? TASK_TYPES : ["BUGFIX"];
+  if (!user.roles.includes("PO")) {
+    // Le testeur arrive directement sur le signalement (écran 6).
+    return (
+      <main className={styles.formPage}>
+        <h1>Signaler un bug</h1>
+        <BugForm projectId={projectId} />
+      </main>
+    );
+  }
 
   return (
     <main className={styles.page}>
@@ -32,6 +41,7 @@ async function ProjectHome({ params }: { params: Promise<{ projectId: string }> 
         {project.description && <p className={styles.description}>{project.description}</p>}
         <p className={styles.hint}>
           Décris une demande : l’orchestrateur choisit la casquette, et rien n’avance sans ta validation.
+          Pour un bug détaillé, utilise le <Link href={`/projets/${projectId}/bugs/nouveau`}>formulaire de signalement</Link>.
         </p>
       </div>
       <Composer
@@ -39,7 +49,7 @@ async function ProjectHome({ params }: { params: Promise<{ projectId: string }> 
         field="request"
         label="Nouvelle demande"
         placeholder="Décris une feature, un bugfix ou une doc…"
-        taskTypes={types}
+        taskTypes={TASK_TYPES}
         chooseModel
       />
     </main>

@@ -14,7 +14,7 @@
   height: 100vh;
   overflow-y: auto;
   background: var(--sy-sidebar);
-  border-right: 1px solid var(--sy-border-soft);
+  border-right: 1px solid var(--sy-divider);
 }
 
 .main {
@@ -141,6 +141,6 @@
     height: auto;
     max-height: none;
     border-right: 0;
-    border-bottom: 1px solid var(--sy-border-soft);
+    border-bottom: 1px solid var(--sy-divider);
   }
 }

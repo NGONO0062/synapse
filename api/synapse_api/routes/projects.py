@@ -11,7 +11,7 @@ from synapse_api.auth import User, require_any
 from synapse_api.db.models import Project, Task
 from synapse_api.db.session import get_session
 from synapse_api.domain.enums import Role, TaskStatus, TaskType
-from synapse_api.schemas import ProjectIn, ProjectOut, ProjectSummaryOut, TaskIn, TaskOut
+from synapse_api.schemas import BugIn, BugReport, ProjectIn, ProjectOut, ProjectSummaryOut, TaskIn, TaskOut
 from synapse_api.services import create_task
 
 router = APIRouter(prefix="/projects", tags=["projets"])
@@ -77,6 +77,27 @@ def create_project_task(project_id: uuid.UUID, body: TaskIn, user: User, session
         author=user.as_actor(),
         author_subject=user.subject,
         ai_model=body.ai_model,
+    )
+    session.commit()
+    return task
+
+
+@router.post("/{project_id}/bugs", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
+def report_bug(project_id: uuid.UUID, body: BugIn, user: User, session: DB) -> Task:
+    """Écran 6 : signalement structuré d'un bug. Il arrive en Backlog."""
+    require_any(user, Role.PO, Role.TESTEUR)
+    project = load_project(session, project_id)
+    report = BugReport.model_validate(body.model_dump())
+    task = create_task(
+        session,
+        project,
+        type=TaskType.BUGFIX,
+        title=body.title,
+        description=f"Étapes : {report.steps}\nAttendu : {report.expected}\nObtenu : {report.actual}",
+        author=user.as_actor(),
+        author_subject=user.subject,
+        ai_model=body.ai_model,
+        bug_report=report.model_dump(),
     )
     session.commit()
     return task

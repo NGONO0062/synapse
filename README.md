@@ -43,6 +43,8 @@ cd api
 
 Parcours type : créer une demande → Prioriser → `plan` → Valider le plan → `result` → Valider le résultat.
 
+Pour un Bugfix, le plan porte le test qui reproduit le bug, et le résultat ouvre un livrable (diff et contrôles) dans le panneau droit. Parcours : le testeur signale le bug (formulaire du projet) → le PO priorise → `plan` → Valider le plan → `result` → le PO valide dans le panneau → le testeur confirme la correction.
+
 ## Vérifier
 
 ```bash
@@ -57,5 +59,5 @@ cd web && npm run typecheck && npm run lint && npm run build
 | 0 · Fondations | Monorepo, cycle de vie des tâches, API projets/tâches/journal, auth OIDC, migration initiale, design system, écran de connexion | Fait |
 | 1 · Identité | Thème de connexion Keycloak, connexion OIDC (BFF, PKCE), session chiffrée, renouvellement des jetons, garde des routes, déconnexion, accueil appelant l'API | Fait |
 | 2a · Projets et tâches | Accueil (décisions en attente, projets), nouveau projet, barre latérale par statut, fil de tâche (plans, résultats, questions, décisions), barre de saisie, simulateur d'agent | Fait |
-| 2b · Bugfix et testeur | Panneau droit du fil Bugfix (diff, tests), écran du testeur (signaler un bug) | À faire |
+| 2b · Bugfix et testeur | Signalement structuré d'un bug (écran du testeur), test qui reproduit le bug dans le plan, panneau du livrable (diff, contrôles) avec la décision, confirmation du testeur | Fait |
 | 3 · Orchestration | LangGraph, sous-graphes par casquette, passerelle LiteLLM, bac à sable | À faire |

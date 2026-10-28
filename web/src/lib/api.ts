@@ -58,6 +58,15 @@ export type ProjectSummary = Project & {
   pending_decisions: number;
 };
 
+export type BugReport = {
+  environment: "STAGING" | "PREPROD";
+  device: string;
+  steps: string;
+  expected: string;
+  actual: string;
+  severity: "BLOQUANT" | "MAJEUR" | "MINEUR";
+};
+
 export type Task = {
   id: string;
   project_id: string;
@@ -67,6 +76,7 @@ export type Task = {
   description: string;
   status: TaskStatus;
   ai_model: string;
+  bug_report: BugReport | null;
   pending_decision: PendingDecision | null;
   awaiting_human: boolean;
   awaiting_reason: "QUESTION" | "PLAN_CHANGE" | "QA_LIMIT" | "TIMEOUT" | null;
@@ -80,8 +90,16 @@ export type Task = {
   updated_at: string;
 };
 
+export type FileChange = { path: string; additions: number; deletions: number; diff: string[]; note: string | null };
+
+export type Check = { label: string; ok: boolean; value: string };
+
 export type Proposal = {
   changes: string[];
+  failing_test: string | null;
+  files: FileChange[];
+  checks: Check[];
+  note: string | null;
   warnings: string[];
   tests: string | null;
   uncertainties: string[];

@@ -1,6 +1,6 @@
 .menu {
   position: relative;
-  border-top: 1px solid var(--sy-border-soft);
+  border-top: 1px solid var(--sy-divider);
 }
 
 .summary {
@@ -28,6 +28,12 @@
   color: var(--sy-human-text);
   font-size: 13px;
   font-weight: 600;
+}
+
+/* Le testeur porte la couleur des bugs (maquette 07). */
+.tester {
+  background: var(--sy-error-bg);
+  color: var(--sy-error-text);
 }
 
 .identity {
@@ -94,5 +100,5 @@
 
 .fallback {
   height: 56px;
-  border-top: 1px solid var(--sy-border-soft);
+  border-top: 1px solid var(--sy-divider);
 }

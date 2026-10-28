@@ -12,7 +12,7 @@ export async function AccountMenu() {
   return (
     <details className={styles.menu}>
       <summary className={styles.summary} aria-label={`Mon compte : ${user.name}, ${role}`}>
-        <span className={styles.avatar} aria-hidden>
+        <span className={user.roles.includes("PO") ? styles.avatar : `${styles.avatar} ${styles.tester}`} aria-hidden>
           {initials(user.name)}
         </span>
         <span className={styles.identity}>

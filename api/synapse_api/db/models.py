@@ -81,6 +81,8 @@ class Task(Base):
     created_by: Mapped[str] = mapped_column(String(255), index=True)
     # Modèle IA choisi dans la barre de saisie ; la casquette, elle, est choisie par l'orchestrateur.
     ai_model: Mapped[str] = mapped_column(String(100), default=DEFAULT_AI_MODEL)
+    # Signalement structuré d'un Bugfix (écran 6), voir schemas.BugReport.
+    bug_report: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # État du cycle de vie, miroir de domain.lifecycle.TaskState.
     status: Mapped[TaskStatus] = mapped_column(

@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -36,18 +37,37 @@ class ProjectSummaryOut(ProjectOut):
     pending_decisions: int
 
 
+def known_model(value: str) -> str:
+    if value not in AI_MODELS:
+        raise ValueError(f"Modèle inconnu. Modèles disponibles : {', '.join(AI_MODELS)}.")
+    return value
+
+
 class TaskIn(BaseModel):
     type: TaskType
     title: str = Field(min_length=1, max_length=300)
     description: str = Field(default="", max_length=20_000)
     ai_model: str = DEFAULT_AI_MODEL
 
-    @field_validator("ai_model")
-    @classmethod
-    def known_model(cls, value: str) -> str:
-        if value not in AI_MODELS:
-            raise ValueError(f"Modèle inconnu. Modèles disponibles : {', '.join(AI_MODELS)}.")
-        return value
+    _check_model = field_validator("ai_model")(known_model)
+
+
+class BugReport(BaseModel):
+    """Formulaire de signalement du testeur (écran 6)."""
+
+    environment: Literal["STAGING", "PREPROD"]
+    device: str = Field(default="", max_length=200)
+    steps: str = Field(min_length=1, max_length=10_000)
+    expected: str = Field(min_length=1, max_length=5_000)
+    actual: str = Field(min_length=1, max_length=5_000)
+    severity: Literal["BLOQUANT", "MAJEUR", "MINEUR"] = "MAJEUR"
+
+
+class BugIn(BugReport):
+    title: str = Field(min_length=1, max_length=300)
+    ai_model: str = DEFAULT_AI_MODEL
+
+    _check_model = field_validator("ai_model")(known_model)
 
 
 class TaskOut(BaseModel):
@@ -61,6 +81,7 @@ class TaskOut(BaseModel):
     description: str
     status: TaskStatus
     ai_model: str
+    bug_report: BugReport | None
     pending_decision: PendingDecision | None
     awaiting_human: bool
     awaiting_reason: AwaitingReason | None
@@ -94,11 +115,30 @@ class TaskEventOut(BaseModel):
     created_at: datetime
 
 
+class FileChange(BaseModel):
+    path: str
+    additions: int = 0
+    deletions: int = 0
+    diff: list[str] = []  # lignes préfixées par « + », « - » ou une espace
+    note: str | None = None
+
+
+class Check(BaseModel):
+    label: str
+    ok: bool
+    value: str  # ex. « Passe », « Échoue », « Aucun »
+
+
 class ProposalPayload(BaseModel):
     """Contenu d'un plan ou d'un résultat. Chaque proposition dit ce dont l'agent
-    n'est pas sûr, ce qu'il a supposé et ce qu'il n'a pas pu vérifier (section 1)."""
+    n'est pas sûr, ce qu'il a supposé et ce qu'il n'a pas pu vérifier (section 1).
+    Un résultat peut porter un livrable consultable dans le panneau droit."""
 
     changes: list[str] = []
+    failing_test: str | None = None  # Bugfix : le test qui reproduit le bug
+    files: list[FileChange] = []
+    checks: list[Check] = []
+    note: str | None = None
     warnings: list[str] = []
     tests: str | None = None
     uncertainties: list[str] = []

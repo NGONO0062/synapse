@@ -10,10 +10,12 @@ type Props = {
   approve: { command: string; label: string };
   // Refus ou demande de modifications : un commentaire est obligatoire.
   reject?: { command: string; label: string; placeholder: string };
+  // Boutons pleine largeur, l'un sous l'autre (panneau du livrable).
+  stacked?: boolean;
 };
 
 // Boutons de décision d'une carte. Le vert est réservé à la décision humaine.
-export function DecisionActions({ taskId, approve, reject }: Props) {
+export function DecisionActions({ taskId, approve, reject, stacked = false }: Props) {
   const [approveState, approveAction, approving] = useActionState(runCommand.bind(null, taskId, approve.command), {
     error: null,
   });
@@ -23,18 +25,19 @@ export function DecisionActions({ taskId, approve, reject }: Props) {
   );
   const [commenting, setCommenting] = useState(false);
   const error = approveState.error ?? rejectState.error;
+  const row = stacked ? `${styles.row} ${styles.stacked}` : styles.row;
 
   return (
     <div className={styles.actions}>
       {!commenting && (
-        <div className={styles.row}>
+        <div className={row}>
           <form action={approveAction}>
-            <Button type="submit" variant="human" disabled={approving}>
+            <Button type="submit" variant="human" block={stacked} disabled={approving}>
               {approve.label}
             </Button>
           </form>
           {reject && (
-            <Button variant="outline" onClick={() => setCommenting(true)}>
+            <Button variant="outline" block={stacked} onClick={() => setCommenting(true)}>
               {reject.label}
             </Button>
           )}
@@ -46,11 +49,11 @@ export function DecisionActions({ taskId, approve, reject }: Props) {
             Ton commentaire
           </label>
           <textarea id={`comment-${taskId}`} name="comment" rows={3} placeholder={reject.placeholder} required autoFocus />
-          <div className={styles.row}>
-            <Button type="submit" variant="primary" disabled={rejecting}>
+          <div className={row}>
+            <Button type="submit" variant="primary" block={stacked} disabled={rejecting}>
               Envoyer le commentaire
             </Button>
-            <Button variant="outline" onClick={() => setCommenting(false)}>
+            <Button variant="outline" block={stacked} onClick={() => setCommenting(false)}>
               Annuler
             </Button>
           </div>
