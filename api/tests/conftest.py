@@ -22,6 +22,20 @@ AUTRE_TESTEUR = CurrentUser("qa-2", "Autre testeur", None, frozenset({Role.TESTE
 ADMIN = CurrentUser("admin-1", "Admin", None, frozenset({Role.ADMIN}))
 
 
+@pytest.fixture(autouse=True)
+def offline_gateway(monkeypatch):
+    """Aucun test ne joint la passerelle : son catalogue (prix, modèles réels) est absent."""
+    import httpx
+
+    from synapse_api.agents import gateway
+
+    def refuse(*args, **kwargs):
+        raise httpx.ConnectError("passerelle hors ligne pendant les tests")
+
+    monkeypatch.setattr(gateway.httpx, "get", refuse)
+    monkeypatch.setattr(gateway, "_catalog_cache", None)
+
+
 @pytest.fixture
 def session_factory() -> sessionmaker[Session]:
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)

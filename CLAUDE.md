@@ -26,13 +26,14 @@ Spécification complète : `docs/Synapse_dossier_developpement.pdf`. Maquettes :
 - Environnements : `STAGING` et `PREPROD` déployés automatiquement, `PROD` uniquement par une action humaine, avec retour arrière automatique pendant 30 min si un contrôle de santé échoue.
 - Projets : création de zéro ou import d'un dépôt existant (étude du code, mémoire reconstituée, écarts spec/code tranchés par le PO, reprise des TODO et issues en Backlog).
 - Mémoire du projet (versionnée dans le dépôt) : Exigences, Maquettes, Architecture, Scénarios, Tests E2E, Décisions.
-- Visibilité (décision provisoire du 27/10/2026, à confirmer) : un PO voit tous les projets de l'espace ; un testeur ne voit que les bugs qu'il a signalés ; l'administrateur n'a pas accès aux projets en v1.
+- Visibilité (décision provisoire du 27/10/2026, à confirmer) : un PO voit tous les projets de l'espace ; un testeur ne voit que les bugs qu'il a signalés ; l'administrateur n'a pas accès aux projets en v1. Exception (lot 3c, provisoire) : l'administrateur voit le nom et la consommation IA de chaque projet pour fixer les quotas, et les cas de référence des casquettes (`/admin`), jamais le contenu d'un projet.
 - Modèle Excel des scénarios, colonnes dans l'ordre : Module, Scénario, Préconditions, Étapes, Résultat attendu, Chrome, Firefox, iOS, Android. Statuts par plateforme : `Not started`, `Passed`, `Failed`.
 
 ## Règles chiffrées
 
 - 3 allers-retours QA/Débogueur maximum, puis remontée au PO.
 - 2 h maximum d'exécution par tâche, puis remontée au PO.
+- Quota mensuel de consommation IA par projet (dollars, prix de la passerelle), fixé par l'administrateur : atteint, les casquettes s'arrêtent sur ce projet jusqu'au mois suivant.
 - Retour arrière automatique actif 30 min après une mise en prod.
 
 ## Stack retenue (version 1)
@@ -64,6 +65,6 @@ Spécification complète : `docs/Synapse_dossier_developpement.pdf`. Maquettes :
 ## Organisation du dépôt
 
 - `web/` : front Next.js 16 (lire `web/AGENTS.md` : cette version diffère des habitudes, docs dans `web/node_modules/next/dist/docs/`). Les jetons sont copiés depuis `design/tokens.css` par `npm run tokens` (automatique avant `dev` et `build`) ; ne jamais éditer `web/src/styles/tokens.css`.
-- `api/` : FastAPI. Le cycle de vie des tâches est un module pur, `synapse_api/domain/lifecycle.py` : toute règle de transition s'y écrit, avec son test dans `tests/test_lifecycle.py`. Les agents n'appellent jamais l'API HTTP ; ils passent par `services.execute` avec un acteur `Actor.agent(...)`. L'orchestrateur est dans `synapse_api/agents/` : `jobs.py` dit ce qui est dû à quelle casquette (lu dans le cycle de vie), `graph.py` porte le graphe LangGraph (un sous-graphe par casquette), `execution.py` l'exécution d'une tâche (reproduction, réalisation, relecture, QA, livrable), `sandbox.py` le dépôt Git et le bac à sable Docker, `referentiels/` les référentiels versionnés. Le code généré ne s'exécute jamais hors du bac à sable. Les casquettes appellent les modèles uniquement par `gateway.py` (LiteLLM).
+- `api/` : FastAPI. Le cycle de vie des tâches est un module pur, `synapse_api/domain/lifecycle.py` : toute règle de transition s'y écrit, avec son test dans `tests/test_lifecycle.py`. Les agents n'appellent jamais l'API HTTP ; ils passent par `services.execute` avec un acteur `Actor.agent(...)`. L'orchestrateur est dans `synapse_api/agents/` : `jobs.py` dit ce qui est dû à quelle casquette (lu dans le cycle de vie), `graph.py` porte le graphe LangGraph (un sous-graphe par casquette), `execution.py` l'exécution d'une tâche (reproduction, réalisation, relecture, QA, livrable), `sandbox.py` le dépôt Git et le bac à sable Docker, `referentiels/` les référentiels versionnés. Le code généré ne s'exécute jamais hors du bac à sable. Les casquettes appellent les modèles uniquement par `gateway.py` (LiteLLM). Chaque appel passe par `usage.ask_model` (quota vérifié avant, jetons et coût enregistrés après) ; jamais `deps.model(...)` directement. Les consignes (`graph.draft_prompt`, `graph.review_prompt`, `execution.implementation_prompt`) sont partagées avec les cas de référence (`evaluation.py`, cas dans `cas_reference/`) : une consigne modifiée se retrouve dans les deux. Un nouveau travail de casquette vient avec ses cas de référence.
 - `infra/` : `docker-compose.yml` pour le développement local (Postgres+pgvector, Keycloak, MinIO, LiteLLM).
 - Session côté front : les composants serveur lisent l'utilisateur via `web/src/lib/auth/current-user.ts` (derrière un `<Suspense>`) et appellent l'API via `web/src/lib/api.ts`. Ne jamais exposer un jeton à un composant client.

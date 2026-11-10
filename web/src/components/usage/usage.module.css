@@ -1,0 +1,379 @@
+/* Consommation et cas de référence (lot 3c) : pages sans maquette, construites avec les jetons. */
+
+.page {
+  display: flex;
+  justify-content: center;
+  padding: 48px 32px 64px;
+}
+
+.column {
+  width: 100%;
+  min-width: 0; /* les tableaux larges défilent dans leur cadre, pas la page */
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+.header h1 {
+  font-size: 34px;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  margin-top: 6px;
+  color: var(--sy-text-muted);
+  font-size: 15px;
+}
+
+.total {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 22px;
+  border: 1px solid var(--sy-border);
+  border-radius: var(--sy-radius-card);
+  background: var(--sy-surface);
+}
+
+.totalAmount {
+  font-family: var(--sy-font-display);
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--sy-text-muted);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.block h2 {
+  font-family: var(--sy-font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sy-text-muted);
+}
+
+.empty,
+.quotaNone,
+.note {
+  color: var(--sy-text-muted);
+  font-size: 14px;
+}
+
+.tableWrap {
+  position: relative; /* garde les libellés masqués (sr-only) dans le cadre qui défile */
+  overflow-x: auto;
+  border: 1px solid var(--sy-border);
+  border-radius: var(--sy-radius-card);
+  background: var(--sy-surface);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.table th,
+.table td {
+  padding: 12px 16px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.table th:first-child {
+  text-align: left;
+  white-space: normal;
+}
+
+.table thead th {
+  color: var(--sy-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--sy-border-soft);
+}
+
+.table tbody tr + tr th,
+.table tbody tr + tr td {
+  border-top: 1px solid var(--sy-border-soft);
+}
+
+.table tbody th {
+  font-weight: 600;
+}
+
+.table a {
+  color: var(--sy-link);
+}
+
+.unpriced {
+  color: var(--sy-text-muted);
+  font-size: 12px;
+}
+
+/* Quota */
+
+.quota {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quotaText {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  font-size: 14px;
+}
+
+.quotaState {
+  font-weight: 600;
+}
+
+.meter {
+  height: 8px;
+  border-radius: var(--sy-radius-pill);
+  background: var(--sy-neutral-bg);
+  overflow: hidden;
+}
+
+.meterFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--sy-radius-pill);
+}
+
+.quotaState.ok {
+  color: var(--sy-text-soft);
+}
+
+.quotaState.near {
+  color: var(--sy-warn-text);
+}
+
+.quotaState.over {
+  color: var(--sy-error-text);
+}
+
+.meterFill.ok {
+  background: var(--sy-ai);
+}
+
+.meterFill.near {
+  background: var(--sy-warn-text);
+}
+
+.meterFill.over {
+  background: var(--sy-error-text);
+}
+
+/* Mois */
+
+.months {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.months a,
+.months .disabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--sy-touch);
+  height: var(--sy-touch);
+  border-radius: var(--sy-radius-pill);
+  color: var(--sy-text);
+  text-decoration: none;
+}
+
+.months a:hover {
+  background: var(--sy-surface-active);
+}
+
+.months .disabled {
+  color: var(--sy-border-strong);
+}
+
+.months [aria-current] {
+  min-width: 130px;
+  text-align: center;
+}
+
+/* Cas de référence */
+
+.alert {
+  padding: 14px 18px;
+  border-radius: var(--sy-radius-card);
+  background: var(--sy-error-bg);
+  color: var(--sy-error-text);
+  font-size: 14px;
+}
+
+.alert strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 15px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: var(--sy-radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badgeOk {
+  background: var(--sy-success-bg);
+  color: var(--sy-success-text);
+}
+
+.badgeRegression {
+  background: var(--sy-error-bg);
+  color: var(--sy-error-text);
+}
+
+.badgeError {
+  background: var(--sy-warn-bg);
+  color: var(--sy-warn-text);
+}
+
+.badgeNeutral {
+  background: var(--sy-neutral-bg);
+  color: var(--sy-neutral-text);
+}
+
+.mono {
+  font-family: var(--sy-font-mono);
+  font-size: 12px;
+  color: var(--sy-text-muted);
+}
+
+.cases {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--sy-border);
+  border-radius: var(--sy-radius-card);
+  background: var(--sy-surface);
+  overflow: hidden;
+}
+
+.cases > li {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 18px;
+}
+
+.cases > li + li {
+  border-top: 1px solid var(--sy-border-soft);
+}
+
+.caseHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+
+.caseTitle {
+  flex: 1 1 260px;
+  font-weight: 600;
+}
+
+.failures {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--sy-error-text);
+  font-size: 14px;
+}
+
+.answer summary {
+  cursor: pointer;
+  color: var(--sy-link);
+  font-size: 13px;
+}
+
+.answer pre {
+  margin: 8px 0 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--sy-bg);
+  font-family: var(--sy-font-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Formulaire de quota (administrateur) */
+
+.budgetForm {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.budgetForm input {
+  width: 96px;
+  min-height: var(--sy-touch);
+  padding: 0 10px;
+  border: 1px solid var(--sy-border);
+  border-radius: var(--sy-radius-field);
+  background: var(--sy-bg);
+  color: var(--sy-text);
+  font: inherit;
+  text-align: right;
+}
+
+.budgetForm button {
+  min-height: var(--sy-touch);
+  padding: 0 14px;
+  border: 1px solid var(--sy-border-strong);
+  border-radius: var(--sy-radius-pill);
+  background: transparent;
+  color: var(--sy-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.budgetForm button:hover {
+  background: var(--sy-surface-active);
+}
+
+.formError {
+  color: var(--sy-error-text);
+  font-size: 12px;
+  white-space: normal;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 32px 16px 48px;
+  }
+}
+
+.cases[hidden] {
+  display: none;
+}

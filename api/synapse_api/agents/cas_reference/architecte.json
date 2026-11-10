@@ -1,0 +1,40 @@
+{
+  "casquette": "ARCHITECTE",
+  "cases": [
+    {
+      "id": "plan-export-pdf",
+      "title": "Plan d'une Feature : analyse d'impact et tests",
+      "kind": "PLAN",
+      "task_type": "FEATURE",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche FEAT-012 (Feature) : Export PDF de la semaine\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga (message) : Le consultant doit pouvoir exporter sa semaine en PDF pour l'envoyer au client.\n- Aline Mbarga a priorisé la tâche.",
+      "expect": {
+        "done": true,
+        "mentions": {
+          "changes": [
+            "PDF"
+          ],
+          "tests": [
+            "PDF",
+            "export"
+          ]
+        }
+      }
+    },
+    {
+      "id": "plan-corrige-par-le-po",
+      "title": "Appliquer les modifications demandées par le PO",
+      "kind": "PLAN",
+      "task_type": "FEATURE",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche FEAT-012 (Feature) : Export PDF de la semaine\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga (message) : Le consultant doit pouvoir exporter sa semaine en PDF pour l'envoyer au client.\n- Architecte (plan) : Je propose un export PDF de la semaine depuis l'écran de saisie.\n{\"changes\": [\"+ API : GET /semaines/{id}/pdf, réservée au consultant et à son manager\", \"~ Écran de saisie : bouton « Exporter en PDF »\"]}\n- Aline Mbarga a demandé des modifications du plan : « Ajoute aussi l'export Excel, même bouton avec un choix de format. »",
+      "expect": {
+        "done": true,
+        "mentions": {
+          "changes": [
+            "Excel",
+            "xlsx"
+          ]
+        }
+      }
+    }
+  ]
+}

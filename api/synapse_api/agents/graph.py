@@ -19,8 +19,9 @@ from synapse_api.agents.casquettes import LABELS, referentiel, system_prompt
 from synapse_api.agents.execution import execution_graph
 from synapse_api.agents.jobs import AUTHORS, JOBS, Assignment, Job, Review, assignment_for, brief
 from synapse_api.agents.state import Deps, WorkState
+from synapse_api.agents.usage import ask_model
 from synapse_api.db.models import Task
-from synapse_api.domain.enums import Casquette
+from synapse_api.domain.enums import Casquette, TaskType
 from synapse_api.domain.lifecycle import Actor
 
 # Au-delà, la proposition part quand même, avec les points non résolus en avertissement :
@@ -38,6 +39,21 @@ def _bullets(items: list[str]) -> str:
     return "\n".join(f"- {item}" for item in items)
 
 
+def draft_prompt(brief_text: str, job: Job, task_type: TaskType) -> str:
+    """Consigne de rédaction, partagée avec les cas de référence (evaluation.py)."""
+    return f"{brief_text}\n\nTa mission : {JOBS[job].instruction(job, task_type)}"
+
+
+def review_prompt(brief_text: str, author: Casquette, draft: dict) -> str:
+    """Consigne de relecture, partagée avec les cas de référence (evaluation.py)."""
+    return (
+        f"{brief_text}\n\nProposition du {LABELS[author]} :\n"
+        f"{json.dumps(draft, ensure_ascii=False, indent=2)}\n\n"
+        "Relis-la avec ton référentiel. Approuve-la si elle peut être soumise à l'humain telle quelle ; "
+        "sinon, liste des corrections précises. Ne la réécris pas."
+    )
+
+
 def casquette_graph(casquette: Casquette, deps: Deps):
     """Sous-graphe d'une casquette : elle rédige, vérifie, se fait relire, puis publie."""
 
@@ -45,14 +61,20 @@ def casquette_graph(casquette: Casquette, deps: Deps):
         a = Assignment.from_state(state)
         spec = JOBS[a.job]
         activity.report(deps.sessions, a.task_id, casquette, DRAFT_STEPS[a.job])
-        prompt = f"{state['brief']}\n\nTa mission : {spec.instruction(a.job, a.task_type)}"
+        prompt = draft_prompt(state["brief"], a.job, a.task_type)
         if state.get("feedback"):
             prompt += (
                 f"\n\nTa proposition précédente :\n{json.dumps(state['draft'], ensure_ascii=False)}"
                 f"\n\nCorrige-la :\n{_bullets(state['feedback'])}"
             )
-        answer = deps.model(state["ai_model"]).structured(
-            spec.schema, system=system_prompt(casquette), prompt=prompt
+        answer = ask_model(
+            deps,
+            spec.schema,
+            casquette=casquette,
+            ai_model=state["ai_model"],
+            system=system_prompt(casquette),
+            prompt=prompt,
+            task_id=a.task_id,
         )
         return {"draft": answer.model_dump(mode="json"), "drafts": state.get("drafts", 0) + 1, "feedback": []}
 
@@ -65,14 +87,14 @@ def casquette_graph(casquette: Casquette, deps: Deps):
     def review(state: WorkState) -> WorkState:
         a = Assignment.from_state(state)
         activity.report(deps.sessions, a.task_id, a.reviewer, "relit la proposition")
-        prompt = (
-            f"{state['brief']}\n\nProposition du {LABELS[casquette]} :\n"
-            f"{json.dumps(state['draft'], ensure_ascii=False, indent=2)}\n\n"
-            "Relis-la avec ton référentiel. Approuve-la si elle peut être soumise à l'humain telle quelle ; "
-            "sinon, liste des corrections précises. Ne la réécris pas."
-        )
-        verdict = deps.model(state["ai_model"]).structured(
-            Review, system=system_prompt(a.reviewer), prompt=prompt
+        verdict = ask_model(
+            deps,
+            Review,
+            casquette=a.reviewer,
+            ai_model=state["ai_model"],
+            system=system_prompt(a.reviewer),
+            prompt=review_prompt(state["brief"], casquette, state["draft"]),
+            task_id=a.task_id,
         )
         if verdict.approved:
             return {}

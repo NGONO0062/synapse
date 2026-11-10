@@ -1,0 +1,109 @@
+{
+  "casquette": "DEBOGUEUR",
+  "cases": [
+    {
+      "id": "reformulation-total-samedi",
+      "title": "Reformuler un bug écrit en quelques mots",
+      "kind": "REPORT",
+      "task_type": "BUGFIX",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche BUG-007 (Bugfix) : Total sans le samedi\n\nFil de la tâche, du plus ancien au plus récent :\n- Brice Nkoulou (message) : Sur la semaine, le total en bas oublie les heures du samedi. J'ai mis 4 h samedi et le total reste à 40 h au lieu de 44. Chrome sur mon PC.",
+      "expect": {
+        "done": true,
+        "values": {
+          "report.environment": [
+            "STAGING"
+          ],
+          "report.severity": [
+            "MAJEUR",
+            "BLOQUANT"
+          ]
+        },
+        "mentions": {
+          "report.expected": [
+            "44"
+          ],
+          "report.actual": [
+            "40"
+          ],
+          "report.device": [
+            "Chrome"
+          ]
+        }
+      }
+    },
+    {
+      "id": "reformulation-libelle-preprod",
+      "title": "Gravité mineure et environnement dit par l'auteur",
+      "kind": "REPORT",
+      "task_type": "BUGFIX",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche BUG-008 (Bugfix) : Libellé du bouton\n\nFil de la tâche, du plus ancien au plus récent :\n- Brice Nkoulou (message) : En préprod, sur iPhone, le bouton de la saisie affiche « Envoyé » au lieu de « Envoyer ». Ça marche quand même.",
+      "expect": {
+        "done": true,
+        "values": {
+          "report.environment": [
+            "PREPROD"
+          ],
+          "report.severity": [
+            "MINEUR"
+          ]
+        },
+        "mentions": {
+          "report.device": [
+            "iPhone",
+            "iOS"
+          ]
+        }
+      }
+    },
+    {
+      "id": "correction-de-l-auteur",
+      "title": "Appliquer la correction demandée par l'auteur",
+      "kind": "REPORT",
+      "task_type": "BUGFIX",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche BUG-007 (Bugfix) : Total sans le samedi\n\nFil de la tâche, du plus ancien au plus récent :\n- Brice Nkoulou (message) : Sur la semaine, le total en bas oublie les heures du samedi. J'ai mis 4 h samedi et le total reste à 40 h au lieu de 44. Chrome sur mon PC.\n- Débogueur (report) : Voici comment je comprends le bug.\n{\"title\": \"Le total de la semaine ignore les heures du samedi\", \"environment\": \"STAGING\", \"device\": \"Chrome sur PC\", \"steps\": \"1. Se connecter en consultant.\\n2. Ouvrir la saisie de la semaine.\\n3. Saisir 8 h du lundi au vendredi et 4 h le samedi.\\n4. Lire le total en bas de la semaine.\", \"expected\": \"Le total affiche 44 h.\", \"actual\": \"Le total affiche 40 h.\", \"severity\": \"MAJEUR\"}\n- Brice Nkoulou a demandé une correction de la reformulation : « C'est sur Firefox, pas Chrome. »",
+      "expect": {
+        "done": true,
+        "mentions": {
+          "report.device": [
+            "Firefox"
+          ],
+          "report.expected": [
+            "44"
+          ]
+        }
+      }
+    },
+    {
+      "id": "plan-commence-par-le-test",
+      "title": "Un plan de Bugfix commence par le test qui échoue",
+      "kind": "PLAN",
+      "task_type": "BUGFIX",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche BUG-007 (Bugfix) : Le total de la semaine ignore les heures du samedi\n\nSignalement structuré :\n{\n  \"environment\": \"STAGING\",\n  \"device\": \"Chrome\",\n  \"severity\": \"MAJEUR\",\n  \"steps\": \"1. Se connecter en consultant.\\n2. Saisir 8 h du lundi au vendredi et 4 h le samedi.\\n3. Lire le total de la semaine.\",\n  \"expected\": \"44 h\",\n  \"actual\": \"40 h\"\n}\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga a validé la reformulation.\n- Aline Mbarga a priorisé la tâche.",
+      "expect": {
+        "done": true,
+        "mentions": {
+          "failing_test": [
+            "samedi",
+            "44"
+          ]
+        }
+      }
+    },
+    {
+      "id": "test-de-reproduction",
+      "title": "Écrire le test qui reproduit le bug, sans le corriger",
+      "kind": "REPRODUCE",
+      "task_type": "BUGFIX",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche BUG-007 (Bugfix) : Le total de la semaine ignore les heures du samedi\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga a validé le plan.\n\nPlan validé par le PO (version 1) :\n{\n  \"changes\": [\n    \"+ Test : total d'une semaine avec 4 h le samedi = 44 h\",\n    \"~ src/total.js : additionner les sept jours\"\n  ],\n  \"failing_test\": \"totalWeek([8, 8, 8, 8, 8, 4, 0]) vaut 44\",\n  \"tests\": \"1 test unitaire\"\n}",
+      "repo": "Dépôt du projet, branche synapse/bug-007 (3 fichiers) :\n- synapse.json\n- src/total.js\n- test/total.test.js\n\n=== synapse.json ===\n{\"image\": \"node:22-bookworm\", \"test\": \"node --test\"}\n\n=== src/total.js ===\n// Total des heures d'une semaine : un tableau de sept nombres, du lundi au dimanche.\nexport function totalWeek(days) {\n  return days.slice(0, 5).reduce((sum, hours) => sum + hours, 0);\n}\n\n=== test/total.test.js ===\nimport { test } from \"node:test\";\nimport assert from \"node:assert/strict\";\nimport { totalWeek } from \"../src/total.js\";\n\ntest(\"additionne la semaine\", () => {\n  assert.equal(totalWeek([8, 8, 8, 8, 8, 0, 0]), 40);\n});\n",
+      "expect": {
+        "asks": false,
+        "mentions": {
+          "edits": [
+            "44"
+          ]
+        }
+      }
+    }
+  ]
+}

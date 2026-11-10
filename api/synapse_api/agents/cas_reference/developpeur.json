@@ -1,0 +1,36 @@
+{
+  "casquette": "DEVELOPPEUR",
+  "cases": [
+    {
+      "id": "realiser-le-plan",
+      "title": "Réaliser le plan validé, tests compris",
+      "kind": "IMPLEMENT",
+      "task_type": "FEATURE",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche FEAT-012 (Feature) : Total du mois\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga a validé le plan.\n\nPlan validé par le PO (version 1) :\n{\n  \"changes\": [\n    \"+ src/total.js : fonction totalMonth(weeks) qui additionne les totaux des semaines\",\n    \"+ test/total.test.js : test de totalMonth\"\n  ],\n  \"tests\": \"1 test unitaire\"\n}",
+      "repo": "Dépôt du projet, branche synapse/feat-012 (3 fichiers) :\n- synapse.json\n- src/total.js\n- test/total.test.js\n\n=== synapse.json ===\n{\"image\": \"node:22-bookworm\", \"test\": \"node --test\"}\n\n=== src/total.js ===\n// Total des heures d'une semaine : un tableau de sept nombres, du lundi au dimanche.\nexport function totalWeek(days) {\n  return days.reduce((sum, hours) => sum + hours, 0);\n}\n\n=== test/total.test.js ===\nimport { test } from \"node:test\";\nimport assert from \"node:assert/strict\";\nimport { totalWeek } from \"../src/total.js\";\n\ntest(\"additionne les sept jours\", () => {\n  assert.equal(totalWeek([8, 8, 8, 8, 8, 4, 0]), 44);\n});\n",
+      "expect": {
+        "asks": false,
+        "writes": [
+          "src/total.js",
+          "test/total.test.js"
+        ],
+        "mentions": {
+          "edits": [
+            "totalMonth"
+          ]
+        }
+      }
+    },
+    {
+      "id": "regle-manquante",
+      "title": "Une règle métier manque : poser la question",
+      "kind": "IMPLEMENT",
+      "task_type": "FEATURE",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche FEAT-013 (Feature) : Majoration des heures de nuit\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga a validé le plan.\n\nPlan validé par le PO (version 1) :\n{\n  \"changes\": [\n    \"~ src/total.js : appliquer le taux de majoration des heures de nuit fixé par la direction\"\n  ],\n  \"tests\": \"1 test unitaire\",\n  \"uncertainties\": [\n    \"Taux de majoration et plage horaire de nuit non communiqués.\"\n  ]\n}",
+      "repo": "Dépôt du projet, branche synapse/feat-013 (3 fichiers) :\n- synapse.json\n- src/total.js\n- test/total.test.js\n\n=== synapse.json ===\n{\"image\": \"node:22-bookworm\", \"test\": \"node --test\"}\n\n=== src/total.js ===\n// Total des heures d'une semaine : un tableau de sept nombres, du lundi au dimanche.\nexport function totalWeek(days) {\n  return days.reduce((sum, hours) => sum + hours, 0);\n}\n\n=== test/total.test.js ===\nimport { test } from \"node:test\";\nimport assert from \"node:assert/strict\";\nimport { totalWeek } from \"../src/total.js\";\n\ntest(\"additionne les sept jours\", () => {\n  assert.equal(totalWeek([8, 8, 8, 8, 8, 4, 0]), 44);\n});\n",
+      "expect": {
+        "asks": true
+      }
+    }
+  ]
+}

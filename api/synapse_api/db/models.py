@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     MetaData,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -16,7 +17,13 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-from synapse_api.domain.enums import DEFAULT_AI_MODEL, MessageKind, TaskStatus, TaskType
+from synapse_api.domain.enums import (
+    DEFAULT_AI_MODEL,
+    EvaluationStatus,
+    MessageKind,
+    TaskStatus,
+    TaskType,
+)
 from synapse_api.domain.lifecycle import (
     ActorKind,
     AwaitingReason,
@@ -64,6 +71,9 @@ class Project(Base):
     description: Mapped[str] = mapped_column(Text, default="")
     created_by: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # Quota mensuel de consommation IA (dollars), fixé par l'administrateur. Vide : le quota
+    # par défaut de l'espace (SYNAPSE_PROJECT_MONTHLY_BUDGET_USD), ou aucun.
+    monthly_budget_usd: Mapped[float | None] = mapped_column(Numeric(10, 2, asdecimal=False), nullable=True)
 
     tasks: Mapped[list["Task"]] = relationship(back_populates="project")
 
@@ -218,3 +228,74 @@ class TaskActivity(Base):
     retry_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     task: Mapped[Task] = relationship(back_populates="activity")
+
+
+class ModelUsage(Base):
+    """Un appel à un modèle par la passerelle : qui l'a fait, pour quoi, et combien il a coûté
+    (section 11, coûts). Écrit par l'orchestrateur, jamais modifié."""
+
+    __tablename__ = "model_usages"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    # Un appel sert un projet (travail sur une tâche) ou une évaluation (cas de référence).
+    project_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("projects.id"), nullable=True, index=True)
+    task_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("tasks.id"), nullable=True)
+    evaluation_run_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("evaluation_runs.id"), nullable=True, index=True
+    )
+    casquette: Mapped[str] = mapped_column(String(32))
+    ai_model: Mapped[str] = mapped_column(String(100))  # nom dans la passerelle (claude-sonnet…)
+    served_model: Mapped[str | None] = mapped_column(String(200), nullable=True)  # modèle réel derrière
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    # Prix de la passerelle au moment de l'appel ; vide si elle ne le connaît pas.
+    cost_usd: Mapped[float | None] = mapped_column(Numeric(14, 6, asdecimal=False), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class EvaluationRun(Base):
+    """Rejeu des cas de référence d'une casquette avec un modèle (section 3, section 11).
+
+    L'empreinte couvre le modèle réel derrière le nom de la passerelle, les consignes
+    (référentiel compris) et les cas : dès que l'un change, les cas sont rejoués."""
+
+    __tablename__ = "evaluation_runs"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    casquette: Mapped[str] = mapped_column(String(32), index=True)
+    ai_model: Mapped[str] = mapped_column(String(100))
+    served_model: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    fingerprint: Mapped[str] = mapped_column(String(64), index=True)
+    referentiel_version: Mapped[str] = mapped_column(String(64))
+    status: Mapped[EvaluationStatus] = mapped_column(
+        _enum(EvaluationStatus, "ck_evaluation_runs_status"), default=EvaluationStatus.RUNNING
+    )
+    total: Mapped[int] = mapped_column(Integer, default=0)
+    passed: Mapped[int] = mapped_column(Integer, default=0)
+    # Cas réussis au rejeu précédent (même casquette, même modèle) et échoués à celui-ci.
+    regressed_cases: Mapped[list] = mapped_column(JSON, default=list)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    results: Mapped[list["EvaluationResult"]] = relationship(
+        back_populates="run", order_by="EvaluationResult.case_id"
+    )
+
+    @property
+    def regressed(self) -> bool:
+        return bool(self.regressed_cases)
+
+
+class EvaluationResult(Base):
+    __tablename__ = "evaluation_results"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("evaluation_runs.id"), index=True)
+    case_id: Mapped[str] = mapped_column(String(100))
+    title: Mapped[str] = mapped_column(String(300))
+    passed: Mapped[bool] = mapped_column(Boolean)
+    failures: Mapped[list] = mapped_column(JSON, default=list)  # attentes non tenues, en clair
+    answer: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # réponse du modèle
+
+    run: Mapped[EvaluationRun] = relationship(back_populates="results")

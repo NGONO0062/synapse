@@ -1,0 +1,52 @@
+{
+  "casquette": "REVIEWER",
+  "cases": [
+    {
+      "id": "relecture-plan-bugfix-sans-test",
+      "title": "Refuser un plan de Bugfix sans test qui reproduit",
+      "kind": "REVIEW",
+      "task_type": "BUGFIX",
+      "author": "DEBOGUEUR",
+      "proposal": {
+        "message": "Je corrige le calcul du total.",
+        "changes": [
+          "~ src/total.js : additionner les sept jours"
+        ],
+        "failing_test": null,
+        "tests": "Vérification manuelle à l'écran.",
+        "uncertainties": [],
+        "assumptions": [],
+        "unverified": []
+      },
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche BUG-007 (Bugfix) : Le total de la semaine ignore les heures du samedi\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga a priorisé la tâche.",
+      "expect": {
+        "approved": false
+      }
+    },
+    {
+      "id": "relecture-plan-bugfix-correct",
+      "title": "Approuver un plan de Bugfix complet",
+      "kind": "REVIEW",
+      "task_type": "BUGFIX",
+      "author": "DEBOGUEUR",
+      "proposal": {
+        "message": "Le total s'arrête au vendredi : je le prouve par un test, puis je corrige.",
+        "changes": [
+          "+ test/total.test.js : semaine avec 4 h le samedi, total attendu 44 h",
+          "~ src/total.js : additionner les sept jours au lieu des cinq premiers"
+        ],
+        "failing_test": "totalWeek([8, 8, 8, 8, 8, 4, 0]) vaut 44 (40 aujourd'hui)",
+        "tests": "Le test du bug, plus la non-régression d'une semaine sans week-end.",
+        "uncertainties": [
+          "Le dimanche n'a pas été vérifié par l'auteur ; la correction le compte aussi."
+        ],
+        "assumptions": [],
+        "unverified": []
+      },
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche BUG-007 (Bugfix) : Le total de la semaine ignore les heures du samedi\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga a priorisé la tâche.",
+      "expect": {
+        "approved": true
+      }
+    }
+  ]
+}

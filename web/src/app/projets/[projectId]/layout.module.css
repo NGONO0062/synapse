@@ -120,3 +120,11 @@
   font-size: 12px;
   color: var(--sy-text-muted);
 }
+
+/* Lien vers la consommation IA du projet (lot 3c), sous les tâches. */
+.usageLink {
+  margin: 0 8px 12px;
+  padding: 4px 12px;
+  color: var(--sy-text-soft);
+  font-size: 14px;
+}

@@ -1,0 +1,55 @@
+{
+  "casquette": "BUSINESS_ANALYST",
+  "cases": [
+    {
+      "id": "relecture-plan-complet",
+      "title": "Approuver un plan qui couvre la demande",
+      "kind": "REVIEW",
+      "task_type": "FEATURE",
+      "author": "ARCHITECTE",
+      "proposal": {
+        "message": "Je propose un export PDF de la semaine depuis l'écran de saisie.",
+        "changes": [
+          "+ API : GET /semaines/{id}/pdf, réservée au consultant et à son manager",
+          "~ Écran de saisie : bouton « Exporter en PDF »"
+        ],
+        "tests": "1 test d'API sur le contenu et les droits, 1 test unitaire de mise en page.",
+        "uncertainties": [
+          "Mise en page attendue (logo, signature) non précisée."
+        ],
+        "assumptions": [],
+        "unverified": []
+      },
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche FEAT-012 (Feature) : Export PDF de la semaine\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga (message) : Le consultant doit pouvoir exporter sa semaine en PDF pour l'envoyer au client.",
+      "expect": {
+        "approved": true
+      }
+    },
+    {
+      "id": "relecture-hors-perimetre",
+      "title": "Refuser un plan qui déborde de la demande",
+      "kind": "REVIEW",
+      "task_type": "FEATURE",
+      "author": "ARCHITECTE",
+      "proposal": {
+        "message": "Je propose un export PDF de la semaine depuis l'écran de saisie.",
+        "changes": [
+          "+ API : GET /semaines/{id}/pdf, réservée au consultant et à son manager",
+          "~ Écran de saisie : bouton « Exporter en PDF »",
+          "+ Écran d'administration des utilisateurs et des rôles",
+          "~ Refonte de la page d'accueil"
+        ],
+        "tests": "1 test d'API sur le contenu et les droits, 1 test unitaire de mise en page.",
+        "uncertainties": [
+          "Mise en page attendue (logo, signature) non précisée."
+        ],
+        "assumptions": [],
+        "unverified": []
+      },
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche FEAT-012 (Feature) : Export PDF de la semaine\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga (message) : Le consultant doit pouvoir exporter sa semaine en PDF pour l'envoyer au client.",
+      "expect": {
+        "approved": false
+      }
+    }
+  ]
+}

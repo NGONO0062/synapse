@@ -6,7 +6,7 @@ from typing import Any, TypedDict
 
 from sqlalchemy.orm import Session, sessionmaker
 
-from synapse_api.agents.gateway import ModelFactory
+from synapse_api.agents.gateway import Catalog, ModelFactory, gateway_catalog
 from synapse_api.agents.sandbox import DockerSandbox, Sandbox
 from synapse_api.config import get_settings
 
@@ -39,6 +39,8 @@ class WorkState(TypedDict, total=False):
 class Deps:
     sessions: sessionmaker[Session]
     model: ModelFactory
+    # Modèle réel et prix de chaque nom de la passerelle (consommation, cas de référence).
+    catalog: Catalog = gateway_catalog
     sandbox: Sandbox = field(default_factory=DockerSandbox)
     git_dir: Path = field(default_factory=lambda: get_settings().git_dir)
     sandbox_image: str = field(default_factory=lambda: get_settings().sandbox_image)

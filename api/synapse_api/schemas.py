@@ -5,7 +5,14 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from synapse_api.domain.enums import AI_MODELS, DEFAULT_AI_MODEL, MessageKind, TaskStatus, TaskType
+from synapse_api.domain.enums import (
+    AI_MODELS,
+    DEFAULT_AI_MODEL,
+    EvaluationStatus,
+    MessageKind,
+    TaskStatus,
+    TaskType,
+)
 from synapse_api.domain.lifecycle import (
     HUMAN_COMMANDS,
     ActorKind,
@@ -221,3 +228,87 @@ class MeOut(BaseModel):
     name: str
     email: str | None
     roles: list[str]
+
+
+# Consommation des modèles IA (section 11, coûts).
+
+
+class UsageLine(BaseModel):
+    """Consommation regroupée par modèle, par casquette ou par projet."""
+
+    key: str
+    calls: int
+    input_tokens: int
+    output_tokens: int
+    cost_usd: float
+    unpriced_calls: int  # appels dont la passerelle ne connaissait pas le prix
+
+
+class ProjectUsageOut(BaseModel):
+    project_id: uuid.UUID
+    project_name: str
+    month: str  # « 2026-11 »
+    cost_usd: float
+    budget_usd: float | None  # quota du mois ; vide : pas de quota
+    budget_is_default: bool  # quota de l'espace, pas fixé pour ce projet
+    by_model: list[UsageLine]
+    by_casquette: list[UsageLine]
+
+
+class ProjectBudgetRow(BaseModel):
+    project_id: uuid.UUID
+    project_name: str
+    calls: int
+    cost_usd: float
+    budget_usd: float | None
+    budget_is_default: bool
+
+
+class WorkspaceUsageOut(BaseModel):
+    month: str
+    cost_usd: float
+    default_budget_usd: float | None
+    projects: list[ProjectBudgetRow]
+    by_model: list[UsageLine]
+    evaluations: UsageLine  # rejeu des cas de référence, hors projets
+
+
+class BudgetIn(BaseModel):
+    # Vide : le projet revient au quota par défaut de l'espace.
+    monthly_budget_usd: float | None = Field(default=None, ge=0, le=1_000_000)
+
+
+# Cas de référence des casquettes (section 3, section 11).
+
+
+class EvaluationRunOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    casquette: str
+    ai_model: str
+    served_model: str | None
+    referentiel_version: str
+    status: EvaluationStatus
+    total: int
+    passed: int
+    regressed_cases: list[str]
+    error: str | None
+    started_at: datetime
+    finished_at: datetime | None
+    cost_usd: float = 0
+
+
+class EvaluationResultOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    case_id: str
+    title: str
+    passed: bool
+    failures: list[str]
+    answer: dict | None
+
+
+class EvaluationRunDetailOut(EvaluationRunOut):
+    results: list[EvaluationResultOut]
+    history: list[EvaluationRunOut]  # rejeux précédents, même casquette et même modèle

@@ -102,3 +102,16 @@ export async function postMessage(taskId: string, _: ActionState, form: FormData
   refresh();
   return { error: null };
 }
+
+/** Administrateur : quota mensuel d'un projet, en dollars ; vide pour le quota par défaut. */
+export async function setProjectBudget(projectId: string, _: ActionState, form: FormData): Promise<ActionState> {
+  const raw = text(form, "budget").replace(/\s/g, "").replace(",", ".");
+  const amount = raw === "" ? null : Number(raw);
+  if (amount !== null && (!Number.isFinite(amount) || amount < 0)) {
+    return { error: "Indique un montant positif, ou laisse vide pour le quota par défaut." };
+  }
+  const result = await apiSend("PUT", `/projects/${projectId}/budget`, { monthly_budget_usd: amount });
+  if (!result.ok) return { error: result.error };
+  refresh();
+  return { error: null };
+}

@@ -62,6 +62,12 @@ if DEFAULT_AI_MODEL not in AI_MODELS:
     raise ValueError(f"SYNAPSE_DEFAULT_AI_MODEL inconnu : {DEFAULT_AI_MODEL}, attendu : {AI_MODELS}.")
 
 
+class EvaluationStatus(StrEnum):
+    RUNNING = "RUNNING"
+    DONE = "DONE"
+    ERROR = "ERROR"  # passerelle injoignable, modèle sans réponse… : rejoué plus tard
+
+
 class Environment(StrEnum):
     STAGING = "STAGING"
     PREPROD = "PREPROD"

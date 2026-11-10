@@ -1,0 +1,39 @@
+{
+  "casquette": "REDACTEUR",
+  "cases": [
+    {
+      "id": "plan-guide-de-saisie",
+      "title": "Plan d'une Doc : document, lecteur",
+      "kind": "PLAN",
+      "task_type": "DOC",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche DOC-003 (Doc) : Guide de saisie pour les consultants\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga (message) : Un guide court pour qu'un nouveau consultant saisisse et soumette sa semaine.\n- Aline Mbarga a priorisé la tâche.",
+      "expect": {
+        "done": true,
+        "mentions": {
+          "changes": [
+            "consultant"
+          ]
+        }
+      }
+    },
+    {
+      "id": "ecrire-le-guide",
+      "title": "Écrire le document prévu par le plan",
+      "kind": "IMPLEMENT",
+      "task_type": "DOC",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche DOC-003 (Doc) : Guide de saisie pour les consultants\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga a validé le plan.\n\nPlan validé par le PO (version 1) :\n{\n  \"changes\": [\n    \"+ docs/guide-saisie.md : saisir et soumettre sa semaine, pour un nouveau consultant\"\n  ],\n  \"tests\": \"Relecture par le Business Analyst\"\n}",
+      "repo": "Dépôt du projet, branche synapse/doc-003 (1 fichier) :\n- README.md\n\n=== README.md ===\n# Feuilles de temps\n\nSaisie hebdomadaire des heures. L'écran « Ma semaine » a un bouton « Soumettre » ; le manager valide ou refuse.\n",
+      "expect": {
+        "asks": false,
+        "writes": [
+          "docs/guide-saisie.md"
+        ],
+        "mentions": {
+          "edits": [
+            "Soumettre"
+          ]
+        }
+      }
+    }
+  ]
+}

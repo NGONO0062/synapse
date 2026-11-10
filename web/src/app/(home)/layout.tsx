@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { AccountMenu, AccountMenuFallback } from "@/components/shell/AccountMenu";
 import { NavLink } from "@/components/shell/NavLink";
@@ -29,7 +30,10 @@ export default function HomeLayout({ children }: LayoutProps<"/">) {
 }
 
 async function ProjectsNav() {
-  const [user, projects] = await Promise.all([getCurrentUser(), apiGet<ProjectSummary[]>("/projects")]);
+  const user = await getCurrentUser();
+  // L'administrateur n'a pas accès aux projets en v1 : il arrive sur son espace.
+  if (!user.roles.includes("PO") && !user.roles.includes("TESTEUR")) redirect("/admin");
+  const projects = await apiGet<ProjectSummary[]>("/projects");
   return (
     <>
       {user.roles.includes("PO") && (
@@ -55,6 +59,11 @@ async function ProjectsNav() {
           </NavLink>
         ))}
       </nav>
+      {user.roles.includes("ADMIN") && (
+        <NavLink href="/admin" className={styles.navLink}>
+          Administration
+        </NavLink>
+      )}
     </>
   );
 }

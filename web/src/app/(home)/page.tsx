@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { STATUS_COLORS } from "@/components/ui/StatusDot";
 import { Tag, TypeTag } from "@/components/ui/Tag";
@@ -31,8 +32,9 @@ export default function HomePage() {
 }
 
 async function Home() {
-  const [user, decisions, projects] = await Promise.all([
-    getCurrentUser(),
+  const user = await getCurrentUser();
+  if (!user.roles.includes("PO") && !user.roles.includes("TESTEUR")) redirect("/admin");
+  const [decisions, projects] = await Promise.all([
     apiGet<Decision[]>("/decisions"),
     apiGet<ProjectSummary[]>("/projects"),
   ]);

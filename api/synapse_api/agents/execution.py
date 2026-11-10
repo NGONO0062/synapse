@@ -20,6 +20,7 @@ from synapse_api.agents.casquettes import LABELS, referentiel, system_prompt
 from synapse_api.agents.jobs import Assignment, PlanDraft, Review, assignment_for, branch_name
 from synapse_api.agents.sandbox import CONFIG_FILE, RunResult, Workspace
 from synapse_api.agents.state import Deps, WorkState
+from synapse_api.agents.usage import ask_model
 from synapse_api.db.models import Task
 from synapse_api.domain.enums import Casquette, MessageKind, TaskType
 from synapse_api.domain.lifecycle import Actor, Command
@@ -98,6 +99,14 @@ def repo_context(ws: Workspace) -> str:
     return "\n".join(parts)
 
 
+def implementation_prompt(brief: str, repo: str, instruction: str, feedback: list[str]) -> str:
+    """Consigne de réalisation, partagée avec les cas de référence (evaluation.py)."""
+    prompt = f"{brief}\n\n{repo}\n\nTa mission : {instruction}"
+    if feedback:
+        prompt += "\n\nÀ corriger d'abord :\n" + "\n".join(f"- {f}" for f in feedback)
+    return prompt
+
+
 def run_tests(deps: Deps, ws: Workspace, label: str) -> RunResult:
     """Installe les dépendances (réseau ouvert) puis lance tous les tests (sans réseau)."""
     config = ws.config()
@@ -140,11 +149,18 @@ def execution_graph(deps: Deps):
         return {"outcome": "question"}
 
     def propose(state: WorkState, casquette: Casquette, instruction: str) -> "Implementation":
-        prompt = f"{state['brief']}\n\n{repo_context(workspace(state))}\n\nTa mission : {instruction}"
-        if state.get("feedback"):
-            prompt += "\n\nÀ corriger d'abord :\n" + "\n".join(f"- {f}" for f in state["feedback"])
-        model = deps.model(state["ai_model"])
-        return model.structured(Implementation, system=system_prompt(casquette), prompt=prompt)
+        prompt = implementation_prompt(
+            state["brief"], repo_context(workspace(state)), instruction, state.get("feedback", [])
+        )
+        return ask_model(
+            deps,
+            Implementation,
+            casquette=casquette,
+            ai_model=state["ai_model"],
+            system=system_prompt(casquette),
+            prompt=prompt,
+            task_id=state["task_id"],
+        )
 
     def write(ws: Workspace, answer: Implementation) -> None:
         for edit in answer.edits:
@@ -256,8 +272,14 @@ def execution_graph(deps: Deps):
             f"\n\nRelis ce changement du {LABELS[a.author]} avec ton référentiel, au regard du plan validé. "
             "Approuve-le s'il peut partir en tests ; sinon, liste des corrections précises."
         )
-        verdict = deps.model(state["ai_model"]).structured(
-            Review, system=system_prompt(a.reviewer), prompt=prompt
+        verdict = ask_model(
+            deps,
+            Review,
+            casquette=a.reviewer,
+            ai_model=state["ai_model"],
+            system=system_prompt(a.reviewer),
+            prompt=prompt,
+            task_id=a.task_id,
         )
         if verdict.approved:
             return {"feedback": [], "open_points": []}

@@ -1,0 +1,61 @@
+{
+  "casquette": "ANALYSTE_TEST",
+  "cases": [
+    {
+      "id": "relecture-signalement-exploitable",
+      "title": "Approuver un signalement exploitable",
+      "kind": "REVIEW",
+      "task_type": "BUGFIX",
+      "author": "DEBOGUEUR",
+      "proposal": {
+        "message": "Voici comment je comprends le bug. Valide-le ou corrige-moi.",
+        "report": {
+          "title": "Le total de la semaine ignore les heures du samedi",
+          "environment": "STAGING",
+          "device": "Chrome sur PC",
+          "steps": "1. Se connecter en consultant.\n2. Ouvrir la saisie de la semaine.\n3. Saisir 8 h du lundi au vendredi et 4 h le samedi.\n4. Lire le total en bas de la semaine.",
+          "expected": "Le total affiche 44 h.",
+          "actual": "Le total affiche 40 h.",
+          "severity": "MAJEUR"
+        },
+        "uncertainties": [
+          "Semaine et compte utilisés non précisés."
+        ],
+        "assumptions": [
+          "Environnement STAGING : l'auteur ne le précise pas."
+        ]
+      },
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche BUG-007 (Bugfix) : Total sans le samedi\n\nFil de la tâche, du plus ancien au plus récent :\n- Brice Nkoulou (message) : Sur la semaine, le total en bas oublie les heures du samedi. J'ai mis 4 h samedi et le total reste à 40 h au lieu de 44. Chrome sur mon PC.",
+      "expect": {
+        "approved": true
+      }
+    },
+    {
+      "id": "relecture-attendu-invente",
+      "title": "Refuser un attendu inventé et des étapes vagues",
+      "kind": "REVIEW",
+      "task_type": "BUGFIX",
+      "author": "DEBOGUEUR",
+      "proposal": {
+        "message": "Voici comment je comprends le bug. Valide-le ou corrige-moi.",
+        "report": {
+          "title": "Le total de la semaine ignore les heures du samedi",
+          "environment": "STAGING",
+          "device": "Chrome sur PC",
+          "steps": "Faire une saisie.",
+          "expected": "Le total est arrondi à l'heure supérieure et inclut le dimanche majoré de 50 %.",
+          "actual": "Le total affiche 40 h.",
+          "severity": "MAJEUR"
+        },
+        "uncertainties": [],
+        "assumptions": [
+          "Environnement STAGING : l'auteur ne le précise pas."
+        ]
+      },
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche BUG-007 (Bugfix) : Total sans le samedi\n\nFil de la tâche, du plus ancien au plus récent :\n- Brice Nkoulou (message) : Sur la semaine, le total en bas oublie les heures du samedi. J'ai mis 4 h samedi et le total reste à 40 h au lieu de 44. Chrome sur mon PC.",
+      "expect": {
+        "approved": false
+      }
+    }
+  ]
+}

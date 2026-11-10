@@ -164,3 +164,71 @@ export type Decision = {
   casquette: Casquette | null;
   since: string;
 };
+
+// Consommation des modèles IA (lot 3c).
+
+export type UsageLine = {
+  key: string; // modèle, casquette ou projet
+  calls: number;
+  input_tokens: number;
+  output_tokens: number;
+  cost_usd: number;
+  unpriced_calls: number; // appels dont la passerelle ne connaissait pas le prix
+};
+
+export type ProjectUsage = {
+  project_id: string;
+  project_name: string;
+  month: string; // « 2026-11 »
+  cost_usd: number;
+  budget_usd: number | null;
+  budget_is_default: boolean;
+  by_model: UsageLine[];
+  by_casquette: UsageLine[];
+};
+
+export type ProjectBudget = {
+  project_id: string;
+  project_name: string;
+  calls: number;
+  cost_usd: number;
+  budget_usd: number | null;
+  budget_is_default: boolean;
+};
+
+export type WorkspaceUsage = {
+  month: string;
+  cost_usd: number;
+  default_budget_usd: number | null;
+  projects: ProjectBudget[];
+  by_model: UsageLine[];
+  evaluations: UsageLine;
+};
+
+// Cas de référence des casquettes, rejoués quand le modèle ou les consignes changent.
+
+export type EvaluationRun = {
+  id: string;
+  casquette: Casquette;
+  ai_model: string;
+  served_model: string | null;
+  referentiel_version: string;
+  status: "RUNNING" | "DONE" | "ERROR";
+  total: number;
+  passed: number;
+  regressed_cases: string[];
+  error: string | null;
+  started_at: string;
+  finished_at: string | null;
+  cost_usd: number;
+};
+
+export type EvaluationResult = {
+  case_id: string;
+  title: string;
+  passed: boolean;
+  failures: string[];
+  answer: Record<string, unknown> | null;
+};
+
+export type EvaluationRunDetail = EvaluationRun & { results: EvaluationResult[]; history: EvaluationRun[] };

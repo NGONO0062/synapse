@@ -62,6 +62,18 @@ Sans clé payante :
 
 Pendant le travail des casquettes, le fil de la tâche montre qui travaille et sur quoi (logo de Synapse animé), ou pourquoi c'est bloqué (modèle injoignable, clé absente), et la page se met à jour seule.
 
+## Consommation et cas de référence
+
+**Consommation.** Chaque appel d'une casquette à un modèle est compté (`model_usages`) : projet, tâche, casquette, modèle, jetons lus et écrits, coût. Le coût vient de la passerelle : jetons de la réponse × prix par jeton de son catalogue (`/model/info`). Un modèle sans prix connu (local) est compté « sans prix », pas à zéro.
+- Le PO suit son projet : lien « Consommation IA » sous les tâches, par modèle et par casquette, mois par mois.
+- L'administrateur (`/admin`) voit l'espace entier, par projet et par modèle (noms et chiffres, jamais le contenu des projets), et fixe le quota mensuel de chaque projet.
+- Quota : par projet, ou `SYNAPSE_PROJECT_MONTHLY_BUDGET_USD` dans `api/.env` pour tous (vide : aucun). Un projet qui l'atteint s'arrête, avec la raison dans le fil de la tâche, jusqu'au mois suivant ou jusqu'à ce que l'administrateur le relève.
+
+**Cas de référence.** Chaque casquette qui rédige ou relit a ses cas dans `api/synapse_api/agents/cas_reference/<casquette>.json` : un dossier d'entrée et ce que la réponse doit tenir (définition de « terminé », valeurs, mots attendus, fichiers écrits, question posée ou non). Un cas passe par la même consigne que le travail réel ; rien n'est publié ni exécuté.
+- L'orchestrateur rejoue les cas dès que l'empreinte change : modèle réel derrière le nom de la passerelle, consignes et référentiel, cas. Il le fait quand aucune tâche n'attend, une casquette par tour, pour les modèles en usage sur les tâches. `SYNAPSE_EVALUATIONS=false` coupe le rejeu automatique (offre gratuite au plus juste).
+- Une régression (cas réussi au rejeu précédent, échoué maintenant) s'affiche en tête de `/admin/cas-de-reference`, avec la réponse du modèle. Les autres échecs ne font pas d'alerte.
+- Rejouer à la main : `.venv/Scripts/python -m synapse_api.agents.evaluation` (ce qui est dû), ou `--casquette debogueur --model gemini` pour forcer.
+
 ## Simuler les agents
 
 Sans clé de fournisseur, un simulateur joue le rôle des casquettes sur une tâche, en passant par les mêmes règles du cycle de vie. Ses messages sont marqués « [Simulation] ». Ne pas le lancer pendant que le worker tourne : le worker fait déjà tout cela.
@@ -101,4 +113,4 @@ cd web && npm run typecheck && npm run lint && npm run build
 | 2c · Bug en langage naturel | Signalement en quelques mots (mode par défaut), reformulation par une casquette, validation ou correction par l'auteur avant la priorisation | Fait |
 | 3a · Orchestrateur | Worker LangGraph (état dans Postgres), passerelle LiteLLM, un sous-graphe par casquette, référentiels versionnés, définition de « terminé », relecture par une autre casquette ; reformulation des bugs et plans | Fait |
 | 3b · Exécution | Bac à sable Docker, dépôt Git par projet et branche par tâche, test qui reproduit le bug, Développeur, relecture du code, tests dans le bac à sable (3 essais), question ou nouveau plan, livrable réel, fusion dans main en Done, remontée à 2 h | Fait |
-| 3c · Traçabilité et coûts | Consommation par projet et par modèle, cas de référence rejoués | À faire |
+| 3c · Traçabilité et coûts | Consommation par appel (jetons, coût de la passerelle) par projet, modèle et casquette ; quotas mensuels ; cas de référence par casquette rejoués quand le modèle ou les consignes changent, régressions pour l'administrateur | Fait |

@@ -21,6 +21,14 @@ class Settings(BaseSettings):
     litellm_api_key: SecretStr = SecretStr("")
     # Modèle des tâches créées sans choix explicite (bug signalé, formulaire). Un des AI_MODELS.
     default_ai_model: str = "claude-sonnet"
+    # Quota mensuel de consommation IA par projet (dollars) quand l'administrateur n'en a pas fixé
+    # pour le projet. Vide : pas de quota.
+    project_monthly_budget_usd: float | None = None
+    # Catalogue de la passerelle (modèle réel et prix de chaque nom), relu après ce délai (secondes).
+    model_catalog_ttl: float = 600
+    # Cas de référence rejoués automatiquement par l'orchestrateur quand le modèle réel, les consignes
+    # ou les cas changent. À couper si les appels sont comptés au plus juste (offre gratuite).
+    evaluations: bool = True
     # Orchestrateur : délai entre deux tours, et avant de réessayer un travail en échec (secondes).
     orchestrator_interval: float = 5
     orchestrator_retry_delay: float = 60

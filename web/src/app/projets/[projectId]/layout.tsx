@@ -121,6 +121,11 @@ async function ProjectNav({ params }: { params: Promise<{ projectId: string }> }
           );
         })}
       </nav>
+      {isPO && (
+        <NavLink href={`/projets/${projectId}/consommation`} className={`${shell.navLink} ${styles.usageLink}`}>
+          Consommation IA
+        </NavLink>
+      )}
     </>
   );
 }

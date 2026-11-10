@@ -14,12 +14,13 @@ from datetime import UTC, datetime, timedelta
 from langgraph.checkpoint.postgres import PostgresSaver
 from sqlalchemy import select
 
-from synapse_api.agents import activity
+from synapse_api.agents import activity, evaluation
 from synapse_api.agents.casquettes import LABELS
-from synapse_api.agents.gateway import LiteLLMModel
+from synapse_api.agents.gateway import LiteLLMModel, gateway_catalog
 from synapse_api.agents.graph import Deps, build_orchestrator, run
 from synapse_api.agents.jobs import Job, due_assignments
 from synapse_api.agents.sandbox import Workspace
+from synapse_api.agents.usage import QuotaExceeded
 from synapse_api.config import get_settings
 from synapse_api.db.models import Task
 from synapse_api.db.session import _session_factory
@@ -36,6 +37,8 @@ def describe(exc: Exception) -> str:
     """Raison d'un échec, lisible par le PO dans l'interface."""
     text = str(exc)
     lowered = text.lower()
+    if isinstance(exc, QuotaExceeded):
+        return text
     if any(k in lowered for k in ("api_key", "api key", "authentication", "401", "403")):
         return "Le fournisseur de ce modèle refuse l'accès : clé absente ou invalide dans infra/.env."
     if "connection error" in lowered or isinstance(exc, ConnectionError):
@@ -91,6 +94,24 @@ def merge_done(deps: Deps, retry_at: dict[str, float]) -> list[str]:
     return merged
 
 
+def replay_reference_cases(deps: Deps, retry_at: dict[str, float]) -> str | None:
+    """Rejoue les cas de référence d'une casquette dont l'empreinte a changé (un rejeu par tour)."""
+    for due in evaluation.due_evaluations(deps):
+        key = f"evaluation:{due.ai_model}:{due.fingerprint}"
+        if retry_at.get(key, 0) > time.monotonic():
+            continue
+        what = f"Cas de référence · {LABELS[due.casquette]} · {due.ai_model}"
+        try:
+            run = evaluation.evaluate(deps, due.casquette, due.ai_model, due.served_model)
+        except Exception as exc:  # noqa: BLE001 : repris plus tard, sans bloquer les tâches
+            retry_at[key] = time.monotonic() + get_settings().orchestrator_retry_delay
+            log.warning("%s · échec, nouvel essai plus tard : %s", what, exc)
+            return "error"
+        log.info("%s · %d/%d cas réussis", what, run.passed, run.total)
+        return "regression" if run.regressed_cases else "done"
+    return None
+
+
 def run_once(orchestrator, deps: Deps, retry_at: dict[str, float] | None = None) -> dict[str, str]:
     """Un tour : chaque travail dû avance d'un coup. Renvoie l'issue par fil LangGraph."""
     retry_at = retry_at if retry_at is not None else {}
@@ -121,6 +142,11 @@ def run_once(orchestrator, deps: Deps, retry_at: dict[str, float] | None = None)
                 deps.sessions, a.task_id, describe(exc), datetime.now(UTC) + timedelta(seconds=delay)
             )
             log.warning("%s · échec, nouvel essai plus tard : %s", what, exc)
+    # Les tâches passent d'abord : les cas de référence se rejouent quand rien d'autre n'est dû.
+    if not assignments and get_settings().evaluations:
+        replayed = replay_reference_cases(deps, retry_at)
+        if replayed:
+            outcomes["evaluation"] = replayed
     return outcomes
 
 
@@ -133,13 +159,14 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
 
     settings = get_settings()
-    deps = Deps(sessions=_session_factory(), model=LiteLLMModel)
+    deps = Deps(sessions=_session_factory(), model=LiteLLMModel, catalog=gateway_catalog)
     conn = settings.database_url.replace("postgresql+psycopg://", "postgresql://")
     with PostgresSaver.from_conn_string(conn) as checkpointer:
         checkpointer.setup()
         orchestrator = build_orchestrator(deps, checkpointer)
         retry_at: dict[str, float] = {}
         activity.clear(deps.sessions)  # une activité restée d'un arrêt précédent n'est plus vraie
+        evaluation.interrupted(deps)
         log.info("Orchestrateur prêt (passerelle %s).", settings.litellm_url)
         while True:
             run_once(orchestrator, deps, retry_at)
