@@ -56,6 +56,85 @@
       "expect": {
         "approved": false
       }
+    },
+    {
+      "id": "scenarios-feature",
+      "title": "Couvrir chaque critère d'acceptation d'une exigence",
+      "kind": "SCENARIOS",
+      "task_type": "FEATURE",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche FEAT-012 (Feature) : Export PDF de la semaine\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga (message) : Le consultant doit pouvoir exporter sa semaine en PDF pour l'envoyer au client.\n- Architecte (plan) : Je propose un export PDF de la semaine depuis l'écran de saisie.\n- Aline Mbarga a validé le plan.\n- Développeur (question) : Une semaine encore en brouillon peut-elle être exportée ?\n- Aline Mbarga a répondu : « Non, seulement une semaine validée par le manager. »\n\nPlan validé par le PO (version 1) :\n{\n  \"changes\": [\n    \"+ API : GET /semaines/{id}/pdf, réservée au consultant et à son manager\",\n    \"~ Écran de saisie : bouton « Exporter en PDF »\"\n  ],\n  \"tests\": \"1 test d'API sur le contenu et les droits, 1 test unitaire de mise en page.\"\n}",
+      "requirements": [
+        {
+          "id": "EX-012",
+          "module": "Export PDF",
+          "title": "Exporter une semaine validée en PDF",
+          "statement": "Le consultant exporte en PDF une semaine validée par son manager, pour l'envoyer au client.",
+          "acceptance": [
+            "Le PDF reprend l'en-tête du consultant, le détail par jour et le total de la semaine.",
+            "Le bouton « Exporter en PDF » n'apparaît pas sur une semaine en brouillon."
+          ]
+        }
+      ],
+      "next_id": "SC-005",
+      "expect": {
+        "done": true,
+        "min_items": {
+          "scenarios": 2
+        },
+        "mentions": {
+          "scenarios": [
+            "brouillon"
+          ]
+        }
+      }
+    },
+    {
+      "id": "scenarios-non-regression",
+      "title": "Scénario de non-régression d'un bug, depuis le signalement",
+      "kind": "SCENARIOS",
+      "task_type": "BUGFIX",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche BUG-007 (Bugfix) : Le total de la semaine ignore les heures du samedi\n\nSignalement structuré :\n{\n  \"environment\": \"STAGING\",\n  \"device\": \"Chrome sur PC\",\n  \"steps\": \"1. Se connecter en consultant.\\n2. Ouvrir la saisie de la semaine.\\n3. Saisir 8 h du lundi au vendredi et 4 h le samedi.\\n4. Lire le total en bas de la semaine.\",\n  \"expected\": \"Le total affiche 44 h.\",\n  \"actual\": \"Le total affiche 40 h.\",\n  \"severity\": \"MAJEUR\"\n}\n\nFil de la tâche, du plus ancien au plus récent :\n- Brice Nkoulou (message) : Le total oublie le samedi.\n- Aline Mbarga a validé le plan.",
+      "next_id": "SC-009",
+      "expect": {
+        "done": true,
+        "min_items": {
+          "scenarios": 1
+        },
+        "mentions": {
+          "scenarios": [
+            "samedi"
+          ]
+        }
+      }
+    },
+    {
+      "id": "relecture-exigence-non-testable",
+      "title": "Refuser une exigence sans critère testable",
+      "kind": "REVIEW",
+      "task_type": "FEATURE",
+      "author": "BUSINESS_ANALYST",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche FEAT-012 (Feature) : Export PDF de la semaine\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga (message) : Le consultant doit pouvoir exporter sa semaine en PDF pour l'envoyer au client.\n- Architecte (plan) : Je propose un export PDF de la semaine depuis l'écran de saisie.\n- Aline Mbarga a validé le plan.\n- Développeur (question) : Une semaine encore en brouillon peut-elle être exportée ?\n- Aline Mbarga a répondu : « Non, seulement une semaine validée par le manager. »\n\nPlan validé par le PO (version 1) :\n{\n  \"changes\": [\n    \"+ API : GET /semaines/{id}/pdf, réservée au consultant et à son manager\",\n    \"~ Écran de saisie : bouton « Exporter en PDF »\"\n  ],\n  \"tests\": \"1 test d'API sur le contenu et les droits, 1 test unitaire de mise en page.\"\n}",
+      "proposal": {
+        "message": "Une exigence pour l'export PDF.",
+        "requirements": [
+          {
+            "id": "EX-012",
+            "module": "Export PDF",
+            "title": "Export PDF",
+            "statement": "L'export PDF doit être rapide et agréable.",
+            "acceptance": [
+              "L'export est rapide.",
+              "Le PDF est joli."
+            ]
+          }
+        ],
+        "removed": [],
+        "uncertainties": [],
+        "assumptions": []
+      },
+      "expect": {
+        "approved": false
+      }
     }
   ]
 }

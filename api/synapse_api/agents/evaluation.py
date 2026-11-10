@@ -28,7 +28,19 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from synapse_api.agents.casquettes import LABELS, referentiel, system_prompt
-from synapse_api.agents.execution import ESCAPES, IMPLEMENT, REPRODUCE, Implementation, implementation_prompt
+from synapse_api.agents.execution import (
+    ESCAPES,
+    IMPLEMENT,
+    REPRODUCE,
+    Implementation,
+    RequirementsDraft,
+    ScenariosDraft,
+    check_requirements,
+    check_scenarios,
+    implementation_prompt,
+    requirements_prompt,
+    scenarios_prompt,
+)
 from synapse_api.agents.gateway import GatewayError
 from synapse_api.agents.graph import draft_prompt, review_prompt
 from synapse_api.agents.jobs import JOBS, Job, PlanDraft, ReportDraft, Review
@@ -48,6 +60,8 @@ class CaseKind(StrEnum):
     REVIEW = "REVIEW"  # relire la proposition d'une autre casquette
     IMPLEMENT = "IMPLEMENT"  # réaliser un plan validé (fichiers proposés, rien n'est exécuté)
     REPRODUCE = "REPRODUCE"  # écrire le test qui reproduit un bug
+    REQUIREMENTS = "REQUIREMENTS"  # mettre à jour les exigences de la mémoire (Business Analyst)
+    SCENARIOS = "SCENARIOS"  # écrire les scénarios de test à partir des exigences (Analyste de test)
 
 
 SCHEMAS: dict[CaseKind, type[BaseModel]] = {
@@ -56,7 +70,10 @@ SCHEMAS: dict[CaseKind, type[BaseModel]] = {
     CaseKind.REVIEW: Review,
     CaseKind.IMPLEMENT: Implementation,
     CaseKind.REPRODUCE: Implementation,
+    CaseKind.REQUIREMENTS: RequirementsDraft,
+    CaseKind.SCENARIOS: ScenariosDraft,
 }
+DONE_KINDS = {CaseKind.REPORT, CaseKind.PLAN, CaseKind.REQUIREMENTS, CaseKind.SCENARIOS}
 
 
 class Expect(BaseModel):
@@ -68,6 +85,7 @@ class Expect(BaseModel):
     approved: bool | None = None  # relecture : approuvée ou non
     writes: list[str] = Field(default=[], description="Fichiers que la réponse doit écrire.")
     asks: bool | None = None  # réalisation : pose une question au lieu d'écrire
+    min_items: dict[str, int] = Field(default={}, description="Champ liste → nombre minimal d'éléments.")
 
 
 class Case(BaseModel):
@@ -79,14 +97,17 @@ class Case(BaseModel):
     author: Casquette | None = None  # relecture : casquette qui a rédigé la proposition
     proposal: dict[str, Any] | None = None  # relecture : la proposition à relire
     repo: str = ""  # réalisation : le dépôt tel que repo_context() le montre
+    # Scénarios : exigences de la tâche à couvrir ; exigences et scénarios : prochain identifiant libre.
+    requirements: list[dict[str, Any]] = []
+    next_id: str | None = None
     expect: Expect
 
     @model_validator(mode="after")
     def _complete(self) -> "Case":
         if self.kind is CaseKind.REVIEW and (self.author is None or self.proposal is None):
             raise ValueError(f"{self.id} : une relecture précise l'auteur et la proposition.")
-        if self.expect.done and self.kind not in (CaseKind.REPORT, CaseKind.PLAN):
-            raise ValueError(f"{self.id} : « done » ne vaut que pour une reformulation ou un plan.")
+        if self.expect.done and self.kind not in DONE_KINDS:
+            raise ValueError(f"{self.id} : « done » ne vaut pas pour une relecture.")
         return self
 
     @property
@@ -101,6 +122,10 @@ class Case(BaseModel):
             return draft_prompt(self.brief, Job.PLAN, self.task_type)
         if self.kind is CaseKind.REVIEW:
             return review_prompt(self.brief, self.author, self.proposal)
+        if self.kind is CaseKind.REQUIREMENTS:
+            return requirements_prompt(self.brief, self.next_id or "EX-001")
+        if self.kind is CaseKind.SCENARIOS:
+            return scenarios_prompt(self.brief, self.task_type, self.requirements, self.next_id or "SC-001")
         instruction = REPRODUCE if self.kind is CaseKind.REPRODUCE else IMPLEMENT[self.task_type] + ESCAPES
         return implementation_prompt(self.brief, self.repo or "(dépôt vide)", instruction, [])
 
@@ -138,14 +163,29 @@ def _text(value: Any) -> str:
     return value if isinstance(value, str) else json.dumps(value, ensure_ascii=False)
 
 
+def done_problems(case: Case, answer: BaseModel) -> list[str]:
+    """La définition de « terminé » du travail réel, appliquée à la réponse du cas."""
+    if case.kind is CaseKind.REQUIREMENTS:
+        return check_requirements(answer, case.task_type)  # type: ignore[arg-type]
+    if case.kind is CaseKind.SCENARIOS:
+        to_cover = {r["id"] for r in case.requirements if "id" in r}
+        return check_scenarios(answer, case.task_type, None, to_cover)  # type: ignore[arg-type]
+    job = Job.REPORT if case.kind is CaseKind.REPORT else Job.PLAN
+    return JOBS[job].check(answer, case.task_type)
+
+
 def judge(case: Case, answer: BaseModel) -> list[str]:
     """Attentes non tenues par la réponse, en clair ; vide si le cas passe."""
     data = answer.model_dump(mode="json")
     expect = case.expect
     failures: list[str] = []
     if expect.done:
-        job = Job.REPORT if case.kind is CaseKind.REPORT else Job.PLAN
-        failures += [f"Définition de « terminé » : {p}" for p in JOBS[job].check(answer, case.task_type)]
+        failures += [f"Définition de « terminé » : {p}" for p in done_problems(case, answer)]
+    for path, minimum in expect.min_items.items():
+        value = _lookup(data, path)
+        found = len(value) if isinstance(value, list) else 0
+        if found < minimum:
+            failures.append(f"{path} : {found} élément(s), {minimum} au moins attendu(s).")
     for path, accepted in expect.values.items():
         value = _lookup(data, path)
         if value not in accepted:

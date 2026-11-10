@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import type { FileChange, Proposal, Task } from "@/lib/api";
+import type { FileChange, MemoryChange, MemoryDocument, Proposal, Task } from "@/lib/api";
 import styles from "./Deliverable.module.css";
 
 // Livrable d'un résultat (écran 5) : lien dans le fil, panneau droit avec diff et tests.
@@ -69,6 +69,8 @@ export function DeliverablePanel({
           <FileDiff key={file.path} file={file} />
         ))}
 
+        {(payload.memory ?? []).length > 0 && <MemoryUpdates changes={payload.memory} />}
+
         {payload.checks.length > 0 && (
           <dl className={styles.checks}>
             {payload.checks.map((check) => (
@@ -85,6 +87,46 @@ export function DeliverablePanel({
 
       {footer && <footer className={styles.panelFooter}>{footer}</footer>}
     </aside>
+  );
+}
+
+const MEMORY_LABELS: Record<MemoryDocument, string> = {
+  EXIGENCES: "Exigences",
+  MAQUETTES: "Maquettes",
+  ARCHITECTURE: "Architecture",
+  SCENARIOS: "Scénarios",
+  TESTS_E2E: "Tests E2E",
+  DECISIONS: "Décisions",
+};
+
+function itemLabel(item: Record<string, unknown>): string {
+  const key = item.id ?? item.name ?? item.title ?? item.journey;
+  const text = item.title ?? item.scenario;
+  return [key, key !== text ? text : null].filter(Boolean).join(" · ");
+}
+
+// Mises à jour de la mémoire du projet proposées avec le résultat : versées quand la tâche passe en Done.
+function MemoryUpdates({ changes }: { changes: MemoryChange[] }) {
+  return (
+    <section className={styles.memory} aria-label="Mémoire du projet, à verser au Done">
+      <strong>Mémoire du projet</strong>
+      <p className={styles.muted}>Versée quand la tâche passe en Done, avec ta validation du résultat.</p>
+      {changes.map((change) => (
+        <div key={change.document} className={styles.memoryDoc}>
+          <span className={styles.memoryTitle}>{MEMORY_LABELS[change.document]}</span>
+          <ul>
+            {change.upserts.map((item, i) => (
+              <li key={i}>{itemLabel(item)}</li>
+            ))}
+            {change.removals.map((key) => (
+              <li key={`retire-${key}`} className={styles.ko}>
+                Retirée : {key}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </section>
   );
 }
 

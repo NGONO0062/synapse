@@ -108,12 +108,25 @@ def safe_path(path: str) -> str:
 
 
 class Workspace:
-    def __init__(self, root: Path, project_id: uuid.UUID, task_id: uuid.UUID, branch: str) -> None:
+    def __init__(self, root: Path, project_id: uuid.UUID, task_id: uuid.UUID | str, branch: str) -> None:
         # Chemins absolus : Git se lance depuis plusieurs dossiers (git_dir vaut « var » par défaut).
         root = root.resolve()
         self.repo = root / "repos" / f"{project_id}.git"
         self.path = root / "workspaces" / str(task_id)
         self.branch = branch
+
+    @classmethod
+    def main_of(cls, root: Path, project_id: uuid.UUID) -> "Workspace":
+        """Copie de travail de main, où Synapse écrit la mémoire validée du projet."""
+        return cls(root, project_id, f"main-{project_id}", "main")
+
+    def sync_main(self) -> None:
+        """Remet la copie de travail sur la dernière version de main (origin)."""
+        self.ensure()
+        self._git("checkout", "-f", "-B", "main", "origin/main")  # écarte un essai précédent non poussé
+
+    def head(self) -> str:
+        return self._git("rev-parse", "HEAD").strip()
 
     def _git(self, *args: str, cwd: Path | None = None, check: bool = True) -> str:
         done = subprocess.run(

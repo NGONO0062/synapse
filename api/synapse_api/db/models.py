@@ -20,6 +20,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from synapse_api.domain.enums import (
     DEFAULT_AI_MODEL,
     EvaluationStatus,
+    MemoryDocument,
     MessageKind,
     TaskStatus,
     TaskType,
@@ -285,6 +286,31 @@ class EvaluationRun(Base):
     @property
     def regressed(self) -> bool:
         return bool(self.regressed_cases)
+
+
+class MemoryVersion(Base):
+    """Une version validée d'un document de la mémoire du projet (section 7).
+
+    Chaque version garde le document entier : la mémoire ne contient que ce que l'humain a
+    validé, et son histoire se relit version par version. Synapse l'écrit ensuite dans le
+    dépôt du projet (`memoire/`), à côté du code ; `commit` dit quand c'est fait."""
+
+    __tablename__ = "memory_versions"
+    __table_args__ = (UniqueConstraint("project_id", "document", "version"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("projects.id"), index=True)
+    document: Mapped[MemoryDocument] = mapped_column(_enum(MemoryDocument, "ck_memory_versions_document"))
+    version: Mapped[int] = mapped_column(Integer)
+    items: Mapped[list] = mapped_column(JSON, default=list)  # contenu complet, voir memory.ITEM_SCHEMAS
+    summary: Mapped[str] = mapped_column(Text, default="")  # ce qui a changé, en une phrase
+    # Tâche dont le livrable validé a versé cette version (vide pour une décision hors tâche).
+    source_task_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("tasks.id"), nullable=True)
+    validated_by: Mapped[str] = mapped_column(String(255))  # nom de l'humain qui a validé
+    validated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    commit: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    source_task: Mapped[Task | None] = relationship()
 
 
 class EvaluationResult(Base):

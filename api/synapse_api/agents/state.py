@@ -33,6 +33,12 @@ class WorkState(TypedDict, total=False):
     message: str
     open_points: list[str]  # remarques de relecture non résolues, montrées au PO
     qa: str | None  # commande de test passée au vert
+    ignored: list[str]  # fichiers de memoire/ qu'un agent a voulu écrire : ignorés
+    # Mémoire du projet : mises à jour proposées avec le livrable (memory.MemoryChange)
+    proposed_requirements: list[dict[str, Any]]  # exigences proposées par le Business Analyst
+    memory: list[dict[str, Any]]
+    memory_points: list[str]  # points de relecture non résolus, montrés au PO
+    memory_notes: list[str]  # incertitudes et suppositions des casquettes
 
 
 @dataclass(frozen=True)

@@ -5,8 +5,9 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from synapse_api import memory
 from synapse_api.db.models import Project, Task, TaskEvent, TaskMessage
-from synapse_api.domain.enums import DEFAULT_AI_MODEL, MessageKind, TaskType
+from synapse_api.domain.enums import DEFAULT_AI_MODEL, MessageKind, TaskStatus, TaskType
 from synapse_api.domain.lifecycle import Actor, ActorKind, Command, TaskState, apply
 from synapse_api.schemas import ProposalPayload
 
@@ -116,6 +117,11 @@ def execute(
             setattr(task, field, getattr(after, field))
     if command is Command.VALIDATE_REPORT:
         _adopt_report(task)
+    if command is Command.ANSWER_HUMAN:
+        # La réponse du PO à une casquette rejoint les décisions de la mémoire du projet.
+        memory.record_decision(
+            session, task, before.awaiting_reason, answer=comment or "", author=actor.name, at=now
+        )
 
     event = TaskEvent(
         task_id=task.id,
@@ -133,6 +139,9 @@ def execute(
     )
     session.add(event)
     session.flush()
+    if after.status is TaskStatus.DONE and before.status is not TaskStatus.DONE:
+        # Tâche terminée : ce que son livrable validé apporte est versé dans la mémoire.
+        memory.pour(session, task, now)
     return event
 
 

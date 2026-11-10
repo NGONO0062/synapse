@@ -74,6 +74,16 @@ Pendant le travail des casquettes, le fil de la tâche montre qui travaille et s
 - Une régression (cas réussi au rejeu précédent, échoué maintenant) s'affiche en tête de `/admin/cas-de-reference`, avec la réponse du modèle. Les autres échecs ne font pas d'alerte.
 - Rejouer à la main : `.venv/Scripts/python -m synapse_api.agents.evaluation` (ce qui est dû), ou `--casquette debogueur --model gemini` pour forcer.
 
+## Mémoire du projet
+
+La mémoire regroupe ce que l'humain a validé, en six documents : Exigences, Maquettes, Architecture, Scénarios, Tests E2E, Décisions. Le PO la consulte depuis le lien « Mémoire du projet » sous les tâches.
+- **Décisions** : chaque réponse du PO à une casquette (question ou remontée) s'ajoute, datée, avec son auteur et sa tâche.
+- **Exigences et scénarios** : le livrable d'une Feature propose des exigences (Business Analyst) et les scénarios qui les couvrent (Analyste de test, écrits à partir des exigences, jamais du code) ; celui d'un Bugfix, un scénario de non-régression. Ils apparaissent dans le panneau du livrable et entrent dans la mémoire quand la tâche passe en Done.
+- Chaque version garde le document entier, avec son historique. L'orchestrateur l'écrit dans `memoire/` sur la branche main du dépôt du projet ; un agent ne peut pas écrire ces fichiers.
+- Les casquettes relisent la mémoire avant chaque travail.
+- Les scénarios se téléchargent au format du modèle Excel (bouton « Télécharger l'Excel »).
+- Maquettes et Architecture viendront avec la création d'un projet de zéro ; Tests E2E avec l'Automaticien.
+
 ## Simuler les agents
 
 Sans clé de fournisseur, un simulateur joue le rôle des casquettes sur une tâche, en passant par les mêmes règles du cycle de vie. Ses messages sont marqués « [Simulation] ». Ne pas le lancer pendant que le worker tourne : le worker fait déjà tout cela.
@@ -114,3 +124,4 @@ cd web && npm run typecheck && npm run lint && npm run build
 | 3a · Orchestrateur | Worker LangGraph (état dans Postgres), passerelle LiteLLM, un sous-graphe par casquette, référentiels versionnés, définition de « terminé », relecture par une autre casquette ; reformulation des bugs et plans | Fait |
 | 3b · Exécution | Bac à sable Docker, dépôt Git par projet et branche par tâche, test qui reproduit le bug, Développeur, relecture du code, tests dans le bac à sable (3 essais), question ou nouveau plan, livrable réel, fusion dans main en Done, remontée à 2 h | Fait |
 | 3c · Traçabilité et coûts | Consommation par appel (jetons, coût de la passerelle) par projet, modèle et casquette ; quotas mensuels ; cas de référence par casquette rejoués quand le modèle ou les consignes changent, régressions pour l'administrateur | Fait |
+| 4a · Mémoire du projet | Six documents validés, versionnés en base et dans `memoire/` du dépôt ; décisions datées tirées des réponses du PO ; exigences (Business Analyst) et scénarios (Analyste de test) proposés avec le livrable et versés au Done ; mémoire relue par les casquettes ; écran Mémoire et export Excel des scénarios | Fait |

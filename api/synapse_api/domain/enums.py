@@ -74,6 +74,17 @@ class Environment(StrEnum):
     PROD = "PROD"
 
 
+class MemoryDocument(StrEnum):
+    """Les six documents de la mémoire du projet (section 7), dans l'ordre d'affichage."""
+
+    EXIGENCES = "EXIGENCES"
+    MAQUETTES = "MAQUETTES"
+    ARCHITECTURE = "ARCHITECTURE"
+    SCENARIOS = "SCENARIOS"
+    TESTS_E2E = "TESTS_E2E"
+    DECISIONS = "DECISIONS"
+
+
 class ScenarioPlatformStatus(StrEnum):
     NOT_STARTED = "Not started"
     PASSED = "Passed"

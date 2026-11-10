@@ -70,7 +70,9 @@ def run_detail(run_id: uuid.UUID, user: User, session: DB) -> EvaluationRunDetai
         .where(
             EvaluationRun.casquette == run.casquette,
             EvaluationRun.ai_model == run.ai_model,
-            EvaluationRun.started_at < run.started_at,
+            # « <= » et non « < » : sous Windows, deux rejeux enchaînés peuvent avoir la même heure.
+            EvaluationRun.started_at <= run.started_at,
+            EvaluationRun.id != run.id,
         )
         .order_by(EvaluationRun.started_at.desc())
         .limit(10)

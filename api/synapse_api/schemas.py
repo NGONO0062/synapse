@@ -9,6 +9,7 @@ from synapse_api.domain.enums import (
     AI_MODELS,
     DEFAULT_AI_MODEL,
     EvaluationStatus,
+    MemoryDocument,
     MessageKind,
     TaskStatus,
     TaskType,
@@ -20,6 +21,7 @@ from synapse_api.domain.lifecycle import (
     Command,
     PendingDecision,
 )
+from synapse_api.memory import MemoryChange
 
 # Seules les décisions humaines passent par l'API ; les agents passent par l'orchestrateur.
 HumanCommand = StrEnum("HumanCommand", {c.value: c.value for c in HUMAN_COMMANDS})
@@ -193,6 +195,8 @@ class ProposalPayload(BaseModel):
     uncertainties: list[str] = []
     assumptions: list[str] = []
     unverified: list[str] = []
+    # Résultat : mises à jour de la mémoire du projet, versées quand la tâche passe en Done.
+    memory: list[MemoryChange] = []
 
 
 class MessageIn(BaseModel):
@@ -312,3 +316,38 @@ class EvaluationResultOut(BaseModel):
 class EvaluationRunDetailOut(EvaluationRunOut):
     results: list[EvaluationResultOut]
     history: list[EvaluationRunOut]  # rejeux précédents, même casquette et même modèle
+
+
+# Mémoire du projet (section 7).
+
+
+class MemoryVersionOut(BaseModel):
+    """Une version validée d'un document, sans son contenu (historique, cartes)."""
+
+    version: int
+    count: int  # éléments du document à cette version
+    summary: str
+    validated_by: str
+    validated_at: datetime
+    source_task: str | None  # code de la tâche d'origine (FEAT-003)
+    commit: str | None  # commit qui l'a écrite dans le dépôt ; vide tant que ce n'est pas fait
+
+
+class MemoryCardOut(BaseModel):
+    document: MemoryDocument
+    label: str  # « Exigences »
+    file: str  # « memoire/exigences.md »
+    count_label: str  # « 24 exigences »
+    latest: MemoryVersionOut | None  # vide : rien de validé pour l'instant
+
+
+class MemoryOut(BaseModel):
+    project_id: uuid.UUID
+    project_name: str
+    documents: list[MemoryCardOut]
+
+
+class MemoryDocumentOut(MemoryCardOut):
+    version: MemoryVersionOut | None  # version montrée (la dernière, ou celle demandée)
+    items: list[dict]
+    history: list[MemoryVersionOut]  # de la plus récente à la plus ancienne

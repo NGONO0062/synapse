@@ -14,6 +14,7 @@ from datetime import UTC, datetime, timedelta
 from langgraph.checkpoint.postgres import PostgresSaver
 from sqlalchemy import select
 
+from synapse_api import memory
 from synapse_api.agents import activity, evaluation
 from synapse_api.agents.casquettes import LABELS
 from synapse_api.agents.gateway import LiteLLMModel, gateway_catalog
@@ -22,7 +23,7 @@ from synapse_api.agents.jobs import Job, due_assignments
 from synapse_api.agents.sandbox import Workspace
 from synapse_api.agents.usage import QuotaExceeded
 from synapse_api.config import get_settings
-from synapse_api.db.models import Task
+from synapse_api.db.models import MemoryVersion, Task
 from synapse_api.db.session import _session_factory
 from synapse_api.domain.enums import Casquette, MessageKind, TaskStatus
 from synapse_api.domain.lifecycle import Actor, Command, is_execution_overdue
@@ -94,6 +95,36 @@ def merge_done(deps: Deps, retry_at: dict[str, float]) -> list[str]:
     return merged
 
 
+def write_memory(deps: Deps, retry_at: dict[str, float]) -> list[str]:
+    """Versions validées de la mémoire pas encore dans le dépôt : écrites dans memoire/ sur main."""
+    written = []
+    with deps.sessions() as session:
+        pending = session.scalars(select(MemoryVersion).where(MemoryVersion.commit.is_(None))).all()
+        for project_id in sorted({v.project_id for v in pending}, key=str):
+            key = f"memory:{project_id}"
+            if retry_at.get(key, 0) > time.monotonic():
+                continue
+            versions = [v for v in pending if v.project_id == project_id]
+            ws = Workspace.main_of(deps.git_dir, project_id)
+            try:
+                ws.sync_main()
+                for document, version in memory.current(session, project_id).items():
+                    if version is not None:
+                        path = f"{memory.MEMORY_DIR}/{memory.FILES[document]}"
+                        ws.write(path, memory.render_markdown(version))
+                summary = "; ".join(f"{memory.LABELS[v.document]} v{v.version}" for v in versions)
+                commit = ws.commit(f"Mémoire du projet : {summary}") or ws.head()
+            except Exception as exc:  # noqa: BLE001 : réessayé plus tard, sans bloquer les autres
+                retry_at[key] = time.monotonic() + get_settings().orchestrator_retry_delay
+                log.warning("Mémoire du projet %s · écriture dans le dépôt impossible : %s", project_id, exc)
+                continue
+            for version in versions:
+                version.commit = commit
+            session.commit()
+            written.append(str(project_id))
+    return written
+
+
 def replay_reference_cases(deps: Deps, retry_at: dict[str, float]) -> str | None:
     """Rejoue les cas de référence d'une casquette dont l'empreinte a changé (un rejeu par tour)."""
     for due in evaluation.due_evaluations(deps):
@@ -119,6 +150,8 @@ def run_once(orchestrator, deps: Deps, retry_at: dict[str, float] | None = None)
         log.info("%s · 2 h d'exécution atteintes : remontée au PO", code)
     for code in merge_done(deps, retry_at):
         log.info("%s · branche fusionnée dans main", code)
+    for project_id in write_memory(deps, retry_at):
+        log.info("Mémoire du projet %s · écrite dans memoire/ sur main", project_id)
     with deps.sessions() as session:
         assignments = due_assignments(session)
     outcomes = {}

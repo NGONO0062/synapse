@@ -16,9 +16,10 @@ import sys
 from sqlalchemy import String, cast, select
 from sqlalchemy.orm import Session
 
+from synapse_api import memory
 from synapse_api.db.models import Project, Task
 from synapse_api.db.session import _session_factory
-from synapse_api.domain.enums import Casquette, MessageKind, TaskType
+from synapse_api.domain.enums import Casquette, MemoryDocument, MessageKind, TaskType
 from synapse_api.domain.lifecycle import Actor, Command, LifecycleError
 from synapse_api.services import add_message, execute, propose_plan, propose_report
 
@@ -153,8 +154,36 @@ def result(session: Session, task: Task) -> None:
             ],
             "note": "Résultat simulé : aucun code exécuté. Branche prête, fusion après ta validation.",
             "unverified": ["Aucune exécution réelle : résultat simulé."],
+            # Mémoire du projet : versée dans la mémoire quand la tâche passe en Done.
+            "memory": _simulated_memory(session, task),
         },
     )
+
+
+def _simulated_memory(session: Session, task: Task) -> list[dict]:
+    exigences = memory.items_of(session, task.project_id, MemoryDocument.EXIGENCES)
+    scenarios = memory.items_of(session, task.project_id, MemoryDocument.SCENARIOS)
+    requirement = memory.next_id(exigences, "EX")
+    scenario = {
+        "id": memory.next_id(scenarios, "SC"),
+        "module": "Calcul",
+        "scenario": f"{task.title} : cas nominal",
+        "preconditions": "Utilisateur connecté",
+        "steps": "1. Ouvrir l'écran concerné\n2. Saisir des valeurs du lundi au samedi",
+        "expected": "Le total compte toutes les valeurs saisies",
+        "requirements": [requirement] if task.type is TaskType.FEATURE else [],
+    }
+    changes = [{"document": "SCENARIOS", "upserts": [scenario], "removals": [], "summary": ""}]
+    if task.type is TaskType.FEATURE:
+        exigence = {
+            "id": requirement,
+            "module": "Calcul",
+            "title": task.title,
+            "statement": f"[Simulation] {task.description or task.title}",
+            "acceptance": ["Le total compte toutes les valeurs saisies, samedi compris."],
+        }
+        changes.insert(0, {"document": "EXIGENCES", "upserts": [exigence], "removals": [], "summary": ""})
+    return [] if task.type is TaskType.DOC else changes
 
 
 def qa_failure(session: Session, task: Task) -> None:

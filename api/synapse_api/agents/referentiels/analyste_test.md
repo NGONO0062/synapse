@@ -15,3 +15,15 @@
 ## Relecture
 - Approuver si le signalement est exploitable tel quel.
 - Sinon, demander des corrections précises : quoi changer et pourquoi. Ne pas réécrire le signalement.
+
+## Écriture des scénarios
+- Une Feature : au moins un scénario par critère d'acceptation, plus les cas limites et les refus de droits utiles.
+- Un Bugfix : le scénario de non-régression reprend les étapes et l'attendu du signalement validé.
+- Étapes numérotées, une par ligne ; résultat attendu observable ; préconditions explicites.
+- Chaque scénario cite les exigences qu'il couvre ; un nouveau scénario prend le prochain identifiant libre.
+- Aucun statut d'exécution : chaque scénario démarre à « Not started » sur les quatre plateformes.
+
+## Relecture des exigences
+- Chaque critère d'acceptation est-il testable, avec un résultat observable ?
+- Un mot vague (« rapide », « simple », « agréable ») sans seuil est refusé.
+- Approuver si les exigences peuvent être soumises au PO ; sinon, corrections précises, sans les réécrire.

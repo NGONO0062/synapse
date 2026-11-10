@@ -1,0 +1,26 @@
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--sy-touch);
+  padding: 0 14px;
+  border-radius: var(--sy-radius-pill);
+  color: var(--sy-text-muted);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.tab:hover {
+  color: var(--sy-text);
+}
+
+.tab[aria-current="page"] {
+  background: var(--sy-surface-active);
+  color: var(--sy-text);
+  font-weight: 600;
+}

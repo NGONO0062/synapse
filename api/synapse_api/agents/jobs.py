@@ -15,8 +15,9 @@ from enum import StrEnum
 
 from pydantic import BaseModel, Field
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, object_session
 
+from synapse_api import memory
 from synapse_api.agents.casquettes import LABELS
 from synapse_api.db.models import Task
 from synapse_api.domain.enums import Casquette, TaskStatus, TaskType
@@ -143,11 +144,16 @@ COMMAND_LABELS = {
 
 
 def brief(task: Task) -> str:
-    """Dossier remis à la casquette : le projet, la tâche et tout le fil, décisions comprises."""
+    """Dossier remis à la casquette : le projet, sa mémoire validée, la tâche et tout le fil,
+    décisions comprises."""
     project = task.project
     lines = [f"Projet : {project.name}"]
     if project.description:
         lines += ["", project.description]
+    session = object_session(task)
+    known = memory.for_agents(session, project.id) if session is not None else ""
+    if known:
+        lines += ["", "Mémoire du projet (validée par le PO, à respecter) :", "", known]
     lines += ["", f"Tâche {task.code} ({TYPE_LABELS[task.type]}) : {task.title}"]
     if task.bug_report:
         lines += ["", "Signalement structuré :", json.dumps(task.bug_report, ensure_ascii=False, indent=2)]
@@ -179,10 +185,25 @@ def brief(task: Task) -> str:
     return "\n".join(lines)
 
 
+def review_prompt(brief_text: str, author: Casquette, draft: dict) -> str:
+    """Consigne de relecture, partagée avec les cas de référence (evaluation.py)."""
+    return (
+        f"{brief_text}\n\nProposition du {LABELS[author]} :\n"
+        f"{json.dumps(draft, ensure_ascii=False, indent=2)}\n\n"
+        "Relis-la avec ton référentiel. Approuve-la si elle peut être soumise à l'humain telle quelle ; "
+        "sinon, liste des corrections précises. Ne la réécris pas."
+    )
+
+
 def _essential(payload: dict) -> dict:
     kept = {k: v for k, v in payload.items() if v not in (None, [], "")}
     if "files" in kept:  # le diff complet est dans le dépôt, pas dans le dossier
         kept["files"] = [f["path"] for f in kept["files"]]
+    if "memory" in kept:  # mises à jour proposées : les clés suffisent pour suivre le fil
+        kept["memory"] = [
+            f"{c['document']} : {', '.join(str(next(iter(i.values()), '')) for i in c.get('upserts', []))}"
+            for c in kept["memory"]
+        ]
     return kept
 
 

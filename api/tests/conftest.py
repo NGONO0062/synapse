@@ -6,10 +6,13 @@ os.environ["SYNAPSE_DEFAULT_AI_MODEL"] = "claude-sonnet"
 
 import pytest
 from fastapi.testclient import TestClient
+from langgraph.checkpoint.memory import InMemorySaver
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from synapse_api.agents.graph import Deps, build_orchestrator
+from synapse_api.agents.worker import run_once
 from synapse_api.auth import CurrentUser, get_current_user
 from synapse_api.db.models import Base
 from synapse_api.db.session import get_session
@@ -64,3 +67,16 @@ class Clients:
 @pytest.fixture
 def clients(session_factory: sessionmaker[Session]) -> Clients:
     return Clients(session_factory)
+
+
+@pytest.fixture
+def team(session_factory, tmp_path):
+    """`team(model, sandbox)` renvoie (un tour de worker, les dépendances) : orchestrateur complet
+    avec un modèle et un bac à sable factices, dépôts Git dans un dossier temporaire."""
+
+    def make(model, sandbox):
+        deps = Deps(sessions=session_factory, model=model, sandbox=sandbox, git_dir=tmp_path)
+        graph = build_orchestrator(deps, InMemorySaver())
+        return (lambda: run_once(graph, deps)), deps
+
+    return make

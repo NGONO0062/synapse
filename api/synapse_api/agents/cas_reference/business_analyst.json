@@ -50,6 +50,85 @@
       "expect": {
         "approved": false
       }
+    },
+    {
+      "id": "exigences-nouvelle-feature",
+      "title": "Écrire l'exigence d'une nouvelle feature, réponse du PO comprise",
+      "kind": "REQUIREMENTS",
+      "task_type": "FEATURE",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche FEAT-012 (Feature) : Export PDF de la semaine\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga (message) : Le consultant doit pouvoir exporter sa semaine en PDF pour l'envoyer au client.\n- Architecte (plan) : Je propose un export PDF de la semaine depuis l'écran de saisie.\n- Aline Mbarga a validé le plan.\n- Développeur (question) : Une semaine encore en brouillon peut-elle être exportée ?\n- Aline Mbarga a répondu : « Non, seulement une semaine validée par le manager. »\n\nPlan validé par le PO (version 1) :\n{\n  \"changes\": [\n    \"+ API : GET /semaines/{id}/pdf, réservée au consultant et à son manager\",\n    \"~ Écran de saisie : bouton « Exporter en PDF »\"\n  ],\n  \"tests\": \"1 test d'API sur le contenu et les droits, 1 test unitaire de mise en page.\"\n}",
+      "next_id": "EX-012",
+      "expect": {
+        "done": true,
+        "min_items": {
+          "requirements": 1
+        },
+        "mentions": {
+          "requirements": [
+            "brouillon",
+            "validée"
+          ]
+        }
+      }
+    },
+    {
+      "id": "exigences-modifier-existante",
+      "title": "Modifier l'exigence existante au lieu d'en créer une nouvelle",
+      "kind": "REQUIREMENTS",
+      "task_type": "FEATURE",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nMémoire du projet (validée par le PO, à respecter) :\n\n### Exigences (version 3)\n\n## EX-003 · Total de la semaine\n\nModule : Saisie des heures\n\nLe consultant voit le total de ses heures du lundi au vendredi, pour vérifier sa semaine avant de la soumettre.\n\nCritères d'acceptation :\n- Le total additionne les heures saisies du lundi au vendredi.\n- Le total se met à jour à chaque saisie.\n\nTâche FEAT-015 (Feature) : Compter le samedi dans le total\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga (message) : Certains consultants travaillent le samedi : le total de la semaine doit compter le samedi. Le dimanche reste exclu.\n- Aline Mbarga a validé le plan.",
+      "next_id": "EX-008",
+      "expect": {
+        "done": true,
+        "min_items": {
+          "requirements": 1
+        },
+        "mentions": {
+          "requirements": [
+            "EX-003"
+          ]
+        }
+      }
+    },
+    {
+      "id": "relecture-scenarios-depuis-le-code",
+      "title": "Refuser des scénarios écrits à partir du code",
+      "kind": "REVIEW",
+      "task_type": "FEATURE",
+      "author": "ANALYSTE_TEST",
+      "brief": "Projet : Feuilles de temps\n\nApplication web où les consultants saisissent leurs heures par semaine ; le manager valide.\n\nTâche FEAT-012 (Feature) : Export PDF de la semaine\n\nFil de la tâche, du plus ancien au plus récent :\n- Aline Mbarga (message) : Le consultant doit pouvoir exporter sa semaine en PDF pour l'envoyer au client.\n- Architecte (plan) : Je propose un export PDF de la semaine depuis l'écran de saisie.\n- Aline Mbarga a validé le plan.\n- Développeur (question) : Une semaine encore en brouillon peut-elle être exportée ?\n- Aline Mbarga a répondu : « Non, seulement une semaine validée par le manager. »\n\nPlan validé par le PO (version 1) :\n{\n  \"changes\": [\n    \"+ API : GET /semaines/{id}/pdf, réservée au consultant et à son manager\",\n    \"~ Écran de saisie : bouton « Exporter en PDF »\"\n  ],\n  \"tests\": \"1 test d'API sur le contenu et les droits, 1 test unitaire de mise en page.\"\n}",
+      "proposal": {
+        "message": "Deux scénarios pour l'export PDF.",
+        "scenarios": [
+          {
+            "id": "SC-005",
+            "module": "Export PDF",
+            "scenario": "La fonction export_pdf renvoie des octets",
+            "preconditions": "",
+            "steps": "1. Appeler export_pdf(semaine)\n2. Vérifier le type du retour",
+            "expected": "export_pdf renvoie un objet bytes commençant par %PDF",
+            "requirements": [
+              "EX-012"
+            ]
+          },
+          {
+            "id": "SC-006",
+            "module": "Export PDF",
+            "scenario": "Le service PdfRenderer est appelé une fois",
+            "preconditions": "",
+            "steps": "1. Mocker PdfRenderer\n2. Appeler la route",
+            "expected": "PdfRenderer.render est appelé une fois",
+            "requirements": [
+              "EX-012"
+            ]
+          }
+        ],
+        "uncertainties": [],
+        "assumptions": []
+      },
+      "expect": {
+        "approved": false
+      }
     }
   ]
 }

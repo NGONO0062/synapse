@@ -17,7 +17,16 @@ from langgraph.graph import END, START, StateGraph
 from synapse_api.agents import activity
 from synapse_api.agents.casquettes import LABELS, referentiel, system_prompt
 from synapse_api.agents.execution import execution_graph
-from synapse_api.agents.jobs import AUTHORS, JOBS, Assignment, Job, Review, assignment_for, brief
+from synapse_api.agents.jobs import (
+    AUTHORS,
+    JOBS,
+    Assignment,
+    Job,
+    Review,
+    assignment_for,
+    brief,
+    review_prompt,
+)
 from synapse_api.agents.state import Deps, WorkState
 from synapse_api.agents.usage import ask_model
 from synapse_api.db.models import Task
@@ -32,7 +41,7 @@ DRAFT_STEPS = {Job.REPORT: "reformule le signalement", Job.PLAN: "rédige le pla
 # Étapes LangGraph permises par fil : une exécution enchaîne réalisation, relecture et QA.
 RECURSION_LIMIT = 200
 
-__all__ = ["Deps", "build_orchestrator", "run"]
+__all__ = ["Deps", "build_orchestrator", "draft_prompt", "review_prompt", "run"]
 
 
 def _bullets(items: list[str]) -> str:
@@ -42,16 +51,6 @@ def _bullets(items: list[str]) -> str:
 def draft_prompt(brief_text: str, job: Job, task_type: TaskType) -> str:
     """Consigne de rédaction, partagée avec les cas de référence (evaluation.py)."""
     return f"{brief_text}\n\nTa mission : {JOBS[job].instruction(job, task_type)}"
-
-
-def review_prompt(brief_text: str, author: Casquette, draft: dict) -> str:
-    """Consigne de relecture, partagée avec les cas de référence (evaluation.py)."""
-    return (
-        f"{brief_text}\n\nProposition du {LABELS[author]} :\n"
-        f"{json.dumps(draft, ensure_ascii=False, indent=2)}\n\n"
-        "Relis-la avec ton référentiel. Approuve-la si elle peut être soumise à l'humain telle quelle ; "
-        "sinon, liste des corrections précises. Ne la réécris pas."
-    )
 
 
 def casquette_graph(casquette: Casquette, deps: Deps):

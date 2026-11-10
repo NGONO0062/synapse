@@ -128,6 +128,7 @@ export type Proposal = {
   uncertainties: string[];
   assumptions: string[];
   unverified: string[];
+  memory: MemoryChange[]; // résultat : mises à jour de la mémoire, versées au Done
 };
 
 export type TaskMessage = {
@@ -232,3 +233,69 @@ export type EvaluationResult = {
 };
 
 export type EvaluationRunDetail = EvaluationRun & { results: EvaluationResult[]; history: EvaluationRun[] };
+
+// Mémoire du projet (lot 4a) : six documents validés par l’humain.
+
+export const MEMORY_DOCUMENTS = ["EXIGENCES", "MAQUETTES", "ARCHITECTURE", "SCENARIOS", "TESTS_E2E", "DECISIONS"] as const;
+export type MemoryDocument = (typeof MEMORY_DOCUMENTS)[number];
+
+export type MemoryChange = {
+  document: MemoryDocument;
+  upserts: Record<string, unknown>[];
+  removals: string[];
+  summary: string;
+};
+
+export type PlatformStatus = "Not started" | "Passed" | "Failed";
+
+export type Requirement = { id: string; module: string; title: string; statement: string; acceptance: string[] };
+export type Screen = { name: string; journey: string; description: string };
+export type ArchitectureSection = { title: string; body: string };
+export type Scenario = {
+  id: string;
+  module: string;
+  scenario: string;
+  preconditions: string;
+  steps: string;
+  expected: string;
+  requirements: string[];
+  chrome: PlatformStatus;
+  firefox: PlatformStatus;
+  ios: PlatformStatus;
+  android: PlatformStatus;
+};
+export type E2ETest = { journey: string; justification: string; file: string | null };
+export type MemoryDecision = {
+  date: string;
+  question: string;
+  answer: string;
+  author: string;
+  task: string | null;
+  casquette: Casquette | null;
+};
+
+export type MemoryVersion = {
+  version: number;
+  count: number;
+  summary: string;
+  validated_by: string;
+  validated_at: string;
+  source_task: string | null; // code de la tâche d’origine
+  commit: string | null; // vide tant que la version n’est pas écrite dans le dépôt
+};
+
+export type MemoryCard = {
+  document: MemoryDocument;
+  label: string;
+  file: string; // « memoire/exigences.md »
+  count_label: string; // « 24 exigences »
+  latest: MemoryVersion | null;
+};
+
+export type ProjectMemory = { project_id: string; project_name: string; documents: MemoryCard[] };
+
+export type MemoryDocumentDetail = MemoryCard & {
+  version: MemoryVersion | null;
+  items: Record<string, unknown>[];
+  history: MemoryVersion[];
+};

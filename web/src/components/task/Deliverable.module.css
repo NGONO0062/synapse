@@ -174,3 +174,27 @@
     border-top: 1px solid var(--sy-border-soft);
   }
 }
+
+/* Mémoire du projet proposée avec le résultat (lot 4a) */
+
+.memory {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--sy-border);
+  border-radius: 14px;
+  font-size: 14px;
+}
+
+.memoryDoc ul {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  color: var(--sy-text-soft);
+}
+
+.memoryTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sy-text-muted);
+}

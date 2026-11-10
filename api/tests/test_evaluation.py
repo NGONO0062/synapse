@@ -187,7 +187,8 @@ def test_the_worker_replays_only_when_no_task_is_due(deps, clients, monkeypatch)
 
 
 def test_admin_dashboard_shows_regressions_first(deps, clients):
-    evaluate(deps(ScriptedModel(Review=[APPROVED])), Casquette.ANALYSTE_TEST, "claude-sonnet")
+    analyst = ScriptedModel(Review=[APPROVED], ScenariosDraft=[{"message": "m", "scenarios": []}])
+    evaluate(deps(analyst), Casquette.ANALYSTE_TEST, "claude-sonnet")
     evaluate(deps(reviewer_model(REFUSED, APPROVED)), Casquette.REVIEWER, "claude-sonnet")
     regressed = evaluate(deps(reviewer_model(APPROVED, APPROVED)), Casquette.REVIEWER, "claude-sonnet")
 

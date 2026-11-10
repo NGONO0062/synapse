@@ -33,6 +33,34 @@ FIX = {
     "message": "Le samedi compte.",
     "edits": [{"path": "app/total.py", "content": "def total(h):\n    return sum(h)\n"}],
 }
+REQUIREMENTS = {
+    "message": "Une exigence pour l'export PDF.",
+    "requirements": [
+        {
+            "id": "EX-001",
+            "module": "Export PDF",
+            "title": "Exporter la semaine en PDF",
+            "statement": "Le consultant exporte sa semaine en PDF pour l'envoyer au client.",
+            "acceptance": ["Le PDF reprend le détail par jour et le total de la semaine."],
+        }
+    ],
+}
+SCENARIO = {
+    "id": "SC-001",
+    "module": "Export PDF",
+    "scenario": "Exporter une semaine validée",
+    "preconditions": "Consultant connecté",
+    "steps": "1. Ouvrir la semaine\n2. Cliquer sur Exporter en PDF",
+    "expected": "Le PDF reprend le détail par jour et le total",
+    "requirements": ["EX-001"],
+}
+# Étape mémoire du livrable : exigences (Feature) puis scénarios (Feature, Bugfix).
+MEMORY = {
+    "RequirementsDraft": [REQUIREMENTS],
+    "ScenariosDraft": [{"message": "Un scénario couvre l'export.", "scenarios": [SCENARIO]}],
+}
+BUG_SCENARIO = SCENARIO | {"scenario": "Total avec un samedi travaillé", "requirements": []}
+BUG_MEMORY = {"ScenariosDraft": [{"message": "Non-régression du samedi.", "scenarios": [BUG_SCENARIO]}]}
 
 
 class FakeSandbox:
@@ -48,18 +76,6 @@ class FakeSandbox:
         return RunResult(
             command, 0 if ok else 1, "1 passed" if ok else "FAILED tests/test_total.py::test_samedi"
         )
-
-
-@pytest.fixture
-def team(session_factory, tmp_path):
-    """`team(model, sandbox)` renvoie (un tour de worker, les dépendances)."""
-
-    def make(model: ScriptedModel, sandbox: FakeSandbox):
-        deps = Deps(sessions=session_factory, model=model, sandbox=sandbox, git_dir=tmp_path)
-        graph = build_orchestrator(deps, InMemorySaver())
-        return (lambda: run_once(graph, deps)), deps
-
-    return make
 
 
 def git(repo: Path, *args: str) -> str:
@@ -84,7 +100,7 @@ def get(clients, task: str) -> dict:
 
 def test_feature_is_built_reviewed_tested_then_submitted(clients, team, tmp_path):
     task = new_task(clients, new_project(clients))["id"]
-    model = ScriptedModel(PlanDraft=[PLAN], Review=[APPROVED], Implementation=[CODE])
+    model = ScriptedModel(PlanDraft=[PLAN], Review=[APPROVED], Implementation=[CODE], **MEMORY)
     sandbox = FakeSandbox(True)
     tick, _ = team(model, sandbox)
     in_progress(clients, tick, task)
@@ -104,8 +120,10 @@ def test_feature_is_built_reviewed_tested_then_submitted(clients, team, tmp_path
     )
     # Le Développeur part du plan validé ; le Reviewer de code relit le diff ; les tests tournent sans réseau.
     assert "Plan validé par le PO (version 1)" in model.prompts("Implementation")[0]
-    assert "« Reviewer de code »" in model.systems("Review")[-1]
-    assert "+def export_pdf(week):" in model.prompts("Review")[-1]
+    reviews = model.prompts("Review")
+    code_review = next(i for i, prompt in enumerate(reviews) if "Diff de la branche" in prompt)
+    assert "« Reviewer de code »" in model.systems("Review")[code_review]
+    assert "+def export_pdf(week):" in reviews[code_review]
     assert sandbox.calls == [("python -m pytest -q", False)]
     # Le travail est sur la branche de la tâche ; main n'a pas bougé.
     repo = bare_repo(tmp_path)
@@ -116,7 +134,7 @@ def test_feature_is_built_reviewed_tested_then_submitted(clients, team, tmp_path
 def test_relative_git_dir_works(clients, session_factory, tmp_path, monkeypatch):
     # Réglage par défaut : git_dir = « var », relatif au dossier de lancement du worker.
     monkeypatch.chdir(tmp_path)
-    model = ScriptedModel(PlanDraft=[PLAN], Review=[APPROVED], Implementation=[CODE])
+    model = ScriptedModel(PlanDraft=[PLAN], Review=[APPROVED], Implementation=[CODE], **MEMORY)
     deps = Deps(sessions=session_factory, model=model, sandbox=FakeSandbox(True), git_dir=Path("var"))
     graph = build_orchestrator(deps, InMemorySaver())
     task = new_task(clients, new_project(clients))["id"]
@@ -129,7 +147,7 @@ def test_relative_git_dir_works(clients, session_factory, tmp_path, monkeypatch)
 def test_bug_is_reproduced_by_a_failing_test_before_the_fix(clients, team, tmp_path):
     bug = clients.as_(TESTEUR).post(f"/projects/{new_project(clients)}/bugs", json=BUG).json()["id"]
     failing = PLAN | {"failing_test": "✕ le samedi n'est pas compté"}
-    model = ScriptedModel(PlanDraft=[failing], Review=[APPROVED], Implementation=[REPRO, FIX])
+    model = ScriptedModel(PlanDraft=[failing], Review=[APPROVED], Implementation=[REPRO, FIX], **BUG_MEMORY)
     tick, _ = team(model, FakeSandbox(False, True))
     in_progress(clients, tick, bug)
 
@@ -145,7 +163,10 @@ def test_bug_is_reproduced_by_a_failing_test_before_the_fix(clients, team, tmp_p
 def test_a_test_that_passes_does_not_reproduce_the_bug(clients, team):
     bug = clients.as_(TESTEUR).post(f"/projects/{new_project(clients)}/bugs", json=BUG).json()["id"]
     model = ScriptedModel(
-        PlanDraft=[PLAN | {"failing_test": "✕ samedi"}], Review=[APPROVED], Implementation=[REPRO, REPRO, FIX]
+        PlanDraft=[PLAN | {"failing_test": "✕ samedi"}],
+        Review=[APPROVED],
+        Implementation=[REPRO, REPRO, FIX],
+        **BUG_MEMORY,
     )
     tick, _ = team(model, FakeSandbox(True, False, True))
     in_progress(clients, tick, bug)
@@ -174,7 +195,7 @@ def test_qa_failures_go_back_to_development_then_up_to_the_po(clients, team):
 def test_developer_asks_instead_of_guessing(clients, team):
     task = new_task(clients, new_project(clients))["id"]
     question = {"message": "", "question": "Faut-il arrondir au quart d'heure ?"}
-    model = ScriptedModel(PlanDraft=[PLAN], Review=[APPROVED], Implementation=[question, CODE])
+    model = ScriptedModel(PlanDraft=[PLAN], Review=[APPROVED], Implementation=[question, CODE], **MEMORY)
     tick, _ = team(model, FakeSandbox(True))
     in_progress(clients, tick, task)
 
@@ -203,7 +224,7 @@ def test_developer_proposes_a_new_plan_instead_of_deviating(clients, team):
 
 def test_done_task_is_merged_into_main(clients, team, tmp_path):
     task = new_task(clients, new_project(clients))["id"]
-    model = ScriptedModel(PlanDraft=[PLAN], Review=[APPROVED], Implementation=[CODE])
+    model = ScriptedModel(PlanDraft=[PLAN], Review=[APPROVED], Implementation=[CODE], **MEMORY)
     tick, _ = team(model, FakeSandbox(True))
     in_progress(clients, tick, task)
     tick()
@@ -269,7 +290,7 @@ def test_real_sandbox_runs_the_feature_tests(clients, session_factory, tmp_path)
             },
         ],
     }
-    model = ScriptedModel(PlanDraft=[PLAN], Review=[APPROVED], Implementation=[code])
+    model = ScriptedModel(PlanDraft=[PLAN], Review=[APPROVED], Implementation=[code], **MEMORY)
     git_dir = tmp_path / "dossier avec espaces"
     deps = Deps(sessions=session_factory, model=model, sandbox=DockerSandbox(), git_dir=git_dir)
     graph = build_orchestrator(deps, InMemorySaver())

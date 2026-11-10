@@ -122,8 +122,14 @@
 }
 
 /* Lien vers la consommation IA du projet (lot 3c), sous les tâches. */
+.projectLinks {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
 .usageLink {
-  margin: 0 8px 12px;
+  margin: 0 8px;
   padding: 4px 12px;
   color: var(--sy-text-soft);
   font-size: 14px;
